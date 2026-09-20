@@ -9,9 +9,12 @@
 html,body{width:100%;height:100%;font-family:'Georgia', serif}
 body{background:#fafaf7;color:#2c2c2c;display:flex;flex-direction:column;overflow:hidden}
 
-header{padding:1.5rem 2rem;border-bottom:1px solid #e0dcd5;background:#fff;flex-shrink:0}
-h1{font-size:1.8rem;font-weight:400;letter-spacing:-0.02em;margin-bottom:0.2rem}
+header{padding:1.5rem 2rem;border-bottom:1px solid #e0dcd5;background:#fff;flex-shrink:0;display:flex;justify-content:space-between;align-items:center}
+.header-left h1{font-size:1.8rem;font-weight:400;letter-spacing:-0.02em;margin-bottom:0.2rem}
 .subtitle{font-size:0.9rem;color:#8b8b7f}
+.header-right{display:flex;gap:0.8rem;align-items:center}
+.help-btn{padding:0.6rem 1.2rem;background:#8b7355;color:#fff;border:none;border-radius:2px;cursor:pointer;font-family:inherit;font-size:0.85rem;font-weight:500;transition:background 0.15s}
+.help-btn:hover{background:#6b5545}
 
 .workspace{display:flex;flex:1;overflow:hidden;gap:0}
 .stage{display:flex;flex-direction:column;flex:1;border-right:1px solid #e0dcd5;overflow:hidden;min-width:300px;position:relative}
@@ -81,17 +84,24 @@ button.secondary:hover{background:#d4cfc5}
 
 .empty-state{color:#999;font-style:italic;text-align:center;padding:1.5rem 0.5rem;font-size:0.85rem}
 
-.modal{display:none;position:fixed;inset:0;background:rgba(44,44,44,0.5);z-index:1000;align-items:center;justify-content:center}
-.modal.show{display:flex}
-.modal-content{background:#fff;padding:1.5rem;border-radius:2px;max-width:500px;width:90%;max-height:75vh;overflow-y:auto}
-.modal-close{float:right;cursor:pointer;font-size:1.3rem;color:#999;margin-bottom:0.5rem}
-.modal-close:hover{color:#2c2c2c}
-.modal-content h2{font-size:1.1rem;font-weight:400;margin-bottom:1rem}
-.modal-content p{font-size:0.9rem;line-height:1.6;margin-bottom:0.8rem;color:#2c2c2c}
-
 .flex-grow{flex:1}
 
 label.field-label{display:block;font-size:0.8rem;color:#8b7355;margin-bottom:0.3rem;font-weight:600}
+
+.guide-box{background:#fffbf7;border:1px solid #d4a574;border-left:3px solid #d4a574;padding:0.8rem;border-radius:2px;margin-bottom:1rem;font-size:0.85rem;line-height:1.5}
+.guide-title{font-weight:600;color:#8b7355;margin-bottom:0.3rem}
+
+.modal{display:none;position:fixed;inset:0;background:rgba(44,44,44,0.5);z-index:1000;align-items:center;justify-content:center;padding:1rem}
+.modal.show{display:flex}
+.modal-content{background:#fff;padding:2rem;border-radius:2px;max-width:700px;width:100%;max-height:85vh;overflow-y:auto}
+.modal-close{float:right;cursor:pointer;font-size:1.3rem;color:#999;margin-bottom:1rem;font-weight:700}
+.modal-close:hover{color:#2c2c2c}
+.modal-content h2{font-size:1.3rem;font-weight:400;margin-bottom:1.2rem}
+.modal-content h3{font-size:1rem;font-weight:400;margin-top:1.5rem;margin-bottom:0.8rem;color:#8b7355}
+.modal-content p{font-size:0.95rem;line-height:1.7;margin-bottom:0.8rem;color:#2c2c2c}
+.modal-content ol,.modal-content ul{margin-left:1.5rem;margin-bottom:1rem}
+.modal-content li{margin-bottom:0.5rem;line-height:1.6}
+.example-box{background:#fffbf7;border-left:3px solid #d4a574;padding:1rem;margin:1rem 0;font-family:'Monaco','Menlo',monospace;font-size:0.85rem;line-height:1.5;color:#2c2c2c}
 
 @media (max-width:1200px) {
   .workspace{flex-direction:column}
@@ -101,7 +111,7 @@ label.field-label{display:block;font-size:0.8rem;color:#8b7355;margin-bottom:0.3
 }
 
 @media (max-width:768px) {
-  header{padding:1rem 1.5rem}
+  header{flex-direction:column;align-items:flex-start;gap:1rem}
   h1{font-size:1.4rem}
   .stage-header{padding:0.8rem 1rem}
   .stage-title{font-size:1rem}
@@ -116,8 +126,13 @@ label.field-label{display:block;font-size:0.8rem;color:#8b7355;margin-bottom:0.3
 <body>
 
 <header>
+<div class="header-left">
 <h1>Pistol: Three-Stage Training</h1>
 <p class="subtitle">Sentence → Tokens → Patterns → Continuation. Full visibility at every step.</p>
+</div>
+<div class="header-right">
+<button class="help-btn" onclick="openGuide()">? How to Use</button>
+</div>
 </header>
 
 <div class="workspace" id="workspace">
@@ -130,9 +145,13 @@ label.field-label{display:block;font-size:0.8rem;color:#8b7355;margin-bottom:0.3
 <div class="stage-title">Tokenize</div>
 </div>
 <div class="stage-content">
+<div class="guide-box">
+<div class="guide-title">Convert sentences to tokens</div>
+Paste a narrative sentence. The system breaks it into semantic concepts (tokens). Example: "Sarah entered the office" → [Sarah, entered, office]
+</div>
 <div class="input-zone">
 <h3>Raw Narrative</h3>
-<textarea id="s1Input" placeholder="Enter a narrative sentence..."></textarea>
+<textarea id="s1Input" placeholder='Try: "Sarah noticed Marcus entering the office"'></textarea>
 <div class="button-row">
 <button onclick="stage1Tokenize()">Tokenize</button>
 <button class="secondary" onclick="stage1Clear()">Clear</button>
@@ -155,26 +174,30 @@ label.field-label{display:block;font-size:0.8rem;color:#8b7355;margin-bottom:0.3
 <div class="stage-title">Learn Patterns</div>
 </div>
 <div class="stage-content">
+<div class="guide-box">
+<div class="guide-title">Teach relationships between tokens</div>
+Pick two tokens from the left. Say what their relationship is. Optionally mark which tokens modify it (catalysts). The system learns and generalizes.
+</div>
 <div class="input-zone">
 <h3>Teach Relationship</h3>
-<label class="field-label">From</label>
+<label class="field-label">From token</label>
 <select id="s2From"><option value="">Select token</option></select>
-<label class="field-label">To</label>
+<label class="field-label">To token</label>
 <select id="s2To"><option value="">Select token</option></select>
-<label class="field-label">Label</label>
-<input type="text" id="s2Label" placeholder="Relationship label">
-<label class="field-label">Base Confidence: <span id="s2ConfVal">0.70</span></label>
+<label class="field-label">Relationship label (e.g., "enter", "notice", "observe")</label>
+<input type="text" id="s2Label" placeholder="What's the relationship?">
+<label class="field-label">How confident? <span id="s2ConfVal">0.70</span></label>
 <input type="range" id="s2Conf" min="0" max="1" step="0.01" value="0.7" oninput="document.getElementById('s2ConfVal').textContent=(parseFloat(this.value).toFixed(2))">
 <div id="s2CatalystUI" style="margin-top:0.8rem;font-size:0.8rem"></div>
 <div class="button-row" style="margin-top:0.8rem">
-<button onclick="stage2Learn()">Learn</button>
+<button onclick="stage2Learn()">Learn This</button>
 <button class="secondary" onclick="stage2Suggest()">Suggest</button>
 </div>
 </div>
 <div class="pattern-viewer flex-grow">
-<div class="label">Learned Patterns</div>
+<div class="label">Patterns You've Taught</div>
 <div id="s2Patterns">
-<div class="empty-state">No patterns yet</div>
+<div class="empty-state">Nothing learned yet. Teach above.</div>
 </div>
 </div>
 </div>
@@ -187,9 +210,13 @@ label.field-label{display:block;font-size:0.8rem;color:#8b7355;margin-bottom:0.3
 <div class="stage-title">Continue Story</div>
 </div>
 <div class="stage-content">
+<div class="guide-box">
+<div class="guide-title">Generate story continuation</div>
+Type a prompt. The system looks up which patterns match, shows you the "reasoning", and generates what comes next.
+</div>
 <div class="input-zone">
 <h3>Story Prompt</h3>
-<textarea id="s3Input" placeholder="Enter a story prompt to continue..."></textarea>
+<textarea id="s3Input" placeholder='Try: "Marcus walked into the office"'></textarea>
 <div class="button-row">
 <button onclick="stage3Continue()">Generate</button>
 <button class="secondary" onclick="stage3Clear()">Clear</button>
@@ -197,9 +224,9 @@ label.field-label{display:block;font-size:0.8rem;color:#8b7355;margin-bottom:0.3
 </div>
 <div style="display:grid;grid-template-rows:1fr 1fr;gap:1rem;flex:1;min-height:0">
 <div class="activation-graph">
-<div class="label">Activated Relationships</div>
+<div class="label">Which patterns matched?</div>
 <div id="s3Activation">
-<div class="empty-state">Generate above to see which patterns fire</div>
+<div class="empty-state">Generate above to see the reasoning</div>
 </div>
 </div>
 <div class="output-box">
@@ -214,15 +241,119 @@ label.field-label{display:block;font-size:0.8rem;color:#8b7355;margin-bottom:0.3
 
 </div>
 
-<div id="sourceModal" class="modal">
+<!-- HELP MODAL -->
+<div id="guideModal" class="modal">
 <div class="modal-content">
-<span class="modal-close" onclick="document.getElementById('sourceModal').classList.remove('show')">&times;</span>
-<h2 id="sourceModalTitle">Source Lineage</h2>
-<div id="sourceModalContent"></div>
+<span class="modal-close" onclick="closeGuide()">&times;</span>
+<h2>How to Use Pistol</h2>
+
+<h3>The Three Stages (in order)</h3>
+
+<h3>Stage 1: Tokenize</h3>
+<p><strong>What it does:</strong> Breaks a sentence into semantic tokens (concepts).</p>
+<p><strong>How to use:</strong></p>
+<ol>
+<li>Paste a narrative sentence (e.g., "Sarah noticed Marcus entering the office")</li>
+<li>Click "Tokenize"</li>
+<li>You'll see tokens appear: each word/concept with a type tag</li>
+</ol>
+<div class="example-box">
+Input: "Sarah noticed Marcus entering the office"
+
+Output:
+Sarah (person)
+noticed (action)
+Marcus (person)
+entering (action)
+office (location)
+</div>
+
+<h3>Stage 2: Learn Patterns</h3>
+<p><strong>What it does:</strong> Teaches the system relationships between tokens.</p>
+<p><strong>How to use:</strong></p>
+<ol>
+<li>After tokenizing, you'll see a dropdown with your tokens in Stage 2</li>
+<li>Pick "From" token and "To" token (e.g., Marcus → office)</li>
+<li>Type what the relationship is (e.g., "enter")</li>
+<li>Optionally: check which tokens modify this relationship (catalysts). Example: if "quickly" speeds up the action, mark it.</li>
+<li>Click "Learn This"</li>
+<li>The pattern appears in the box below. Each time you teach it again, confidence increases.</li>
+</ol>
+<p><strong>Teach multiple versions of the same relationship:</strong></p>
+<p>Stage 1: "Sarah entered the office"<br>Teach: Sarah → office = "enter" (conf 0.75)</p>
+<p>Stage 1: "Marcus walked into the hallway"<br>Teach: Marcus → hallway = "enter" (conf 0.68)</p>
+<p>→ System learns: person → location = "enter" (generalized, confidence 0.72)</p>
+
+<h3>Stage 3: Generate Continuation</h3>
+<p><strong>What it does:</strong> Uses your learned patterns to continue a story.</p>
+<p><strong>How to use:</strong></p>
+<ol>
+<li>Type a story prompt (e.g., "The lawyer entered the building")</li>
+<li>Click "Generate"</li>
+<li>The system tokenizes your prompt, looks up patterns, and shows you:</li>
+<ul>
+<li><strong>Activated Relationships:</strong> Which patterns matched? With what confidence?</li>
+<li><strong>Generated Continuation:</strong> The next part of the story</li>
+</ul>
+<li>If a pattern doesn't exist, it will flag it. Go back to Stage 2 and teach it.</li>
+</ol>
+
+<h3>Complete Workflow Example</h3>
+<div class="example-box">
+SENTENCE 1:
+"Sarah noticed Marcus entering the office"
+
+Stage 1 → Tokenize:
+[Sarah, noticed, Marcus, entering, office]
+
+Stage 2 → Teach relationships:
+Marcus → office: "enter" (confidence 0.75, catalyst: action)
+Sarah → office: "observe" (confidence 0.65, catalyst: action)
+
+SENTENCE 2:
+"Marcus quickly walked to the conference room"
+
+Stage 2 → Teach more:
+Marcus → conference_room: "walk" (confidence 0.68, catalyst: speed)
+
+Now the system learned:
+person → location: "enter" or "walk" (generalized from Marcus & Sarah)
+
+PROMPT:
+"The lawyer entered the building"
+
+Stage 3 → Generate:
+Matches: person → location (0.72)
+Output: "The lawyer stepped inside. Everyone turned to look."
+</div>
+
+<h3>Key Concepts</h3>
+<p><strong>Token:</strong> A semantic concept (person, action, location, etc.). Not just a word.</p>
+<p><strong>Pattern:</strong> A learned relationship. "Marcus → office" is concrete. "person → location" is generalized.</p>
+<p><strong>Catalyst:</strong> A token that modifies a relationship. "If action is present, enter is more likely."</p>
+<p><strong>Confidence:</strong> How sure the system is (0–1). Teach it multiple times to raise confidence.</p>
+<p><strong>Divergence:</strong> When the same relationship has different confidences from different sources. The system tracks this and shows you where patterns branch.</p>
+
+<h3>Pro Tips</h3>
+<ul>
+<li>Start simple. Teach relationships for one scene, then test generation.</li>
+<li>Teach the same relationship 3+ times in different ways to build generalization.</li>
+<li>Look at "Source" badges on patterns—click them to see which sentences taught what.</li>
+<li>If generation fails, check the "Activated Relationships" panel. If a pattern is missing, go back to Stage 2 and teach it.</li>
+<li>Catalyst checkboxes help the system understand *why* a relationship applies. Use them when certain tokens change the relationship's meaning.</li>
+</ul>
 </div>
 </div>
 
 <script>
+function openGuide() {
+  document.getElementById('guideModal').classList.add('show');
+}
+
+function closeGuide() {
+  document.getElementById('guideModal').classList.remove('show');
+}
+
 let resizingStage = null;
 let startX = 0;
 let startWidth = 0;
@@ -230,8 +361,7 @@ let startWidth = 0;
 function startResize(e, stageName) {
   resizingStage = stageName;
   startX = e.clientX;
-  const stage = document.getElementById(stageName);
-  startWidth = stage.offsetWidth;
+  startWidth = document.getElementById(stageName).offsetWidth;
   document.addEventListener('mousemove', resize);
   document.addEventListener('mouseup', stopResize);
   e.preventDefault();
@@ -330,9 +460,10 @@ let currentTokens = [];
 function mockTokenize(sentence) {
   const words = sentence.trim().split(/\s+/);
   const types = {
-    'Sarah': 'person', 'Marcus': 'person', 'office': 'location', 'coffee': 'object', 'desk': 'object',
-    'noticed': 'action', 'entered': 'action', 'said': 'action', 'walked': 'action', 'saw': 'action',
-    'quietly': 'modifier', 'quickly': 'modifier', 'there': 'location'
+    'Sarah': 'person', 'Marcus': 'person', 'lawyer': 'person', 'guard': 'person',
+    'office': 'location', 'coffee': 'object', 'desk': 'object', 'hallway': 'location', 'building': 'location', 'conference': 'location', 'room': 'location',
+    'noticed': 'action', 'entered': 'action', 'said': 'action', 'walked': 'action', 'saw': 'action', 'observe': 'action', 'enter': 'action',
+    'quickly': 'modifier', 'formally': 'modifier', 'there': 'location'
   };
   return words.map(word => ({
     value: word,
@@ -370,7 +501,7 @@ function renderCatalystUI() {
     ui.innerHTML = '<div class="empty-state" style="padding:0.8rem">Tokenize a sentence first</div>';
     return;
   }
-  ui.innerHTML = `<div style="color:#999;margin-bottom:0.6rem">Catalysts</div>` +
+  ui.innerHTML = `<div style="color:#999;margin-bottom:0.6rem"><strong>Does a token modify this relationship?</strong> (optional)</div>` +
     currentTokens.map((t, i) => `
       <label style="display:block;margin-bottom:0.3rem;cursor:pointer;font-size:0.8rem">
         <input type="checkbox" class="catalyst-check" data-idx="${i}" data-val="${t.value}" data-type="${t.type}">
@@ -385,8 +516,14 @@ function stage2Learn() {
   const label = document.getElementById('s2Label').value.trim();
   const conf = parseFloat(document.getElementById('s2Conf').value);
 
-  if (isNaN(fromIdx) || isNaN(toIdx) || !label) return;
-  if (fromIdx === toIdx) return;
+  if (isNaN(fromIdx) || isNaN(toIdx) || !label) {
+    alert('Fill in From, To, and Label');
+    return;
+  }
+  if (fromIdx === toIdx) {
+    alert('From and To must be different');
+    return;
+  }
 
   const fromToken = currentTokens[fromIdx];
   const toToken = currentTokens[toIdx];
@@ -410,12 +547,18 @@ function stage2Learn() {
 function stage2Suggest() {
   const fromIdx = parseInt(document.getElementById('s2From').value);
   const toIdx = parseInt(document.getElementById('s2To').value);
-  if (isNaN(fromIdx) || isNaN(toIdx)) return;
+  if (isNaN(fromIdx) || isNaN(toIdx)) {
+    alert('Select From and To first');
+    return;
+  }
 
   const fromToken = currentTokens[fromIdx];
   const toToken = currentTokens[toIdx];
   const pred = patterns.predict(fromToken.value, toToken.value, fromToken.type, toToken.type);
-  if (!pred) return;
+  if (!pred) {
+    alert('No pattern learned for this pair yet');
+    return;
+  }
 
   document.getElementById('s2Label').value = pred.label;
   document.getElementById('s2Conf').value = pred.confidence.toFixed(2);
@@ -426,7 +569,7 @@ function renderPatterns() {
   const container = document.getElementById('s2Patterns');
   const pats = patterns.getGeneralizedPatterns();
   if (pats.length === 0) {
-    container.innerHTML = '<div class="empty-state">No patterns yet</div>';
+    container.innerHTML = '<div class="empty-state">Nothing learned yet. Teach above.</div>';
     return;
   }
   container.innerHTML = pats.map(p => `
@@ -447,17 +590,7 @@ function renderPatterns() {
 }
 
 function showSourceLineage(patternKey, sourceIdx) {
-  const modal = document.getElementById('sourceModal');
-  document.getElementById('sourceModalTitle').textContent = `Lineage: ${patternKey}`;
-  document.getElementById('sourceModalContent').innerHTML = `
-    <p>This generalized pattern was taught by multiple concrete examples.</p>
-    <p><strong>Pattern:</strong> ${patternKey}</p>
-    <p><strong>Source sentence:</strong> Training sentence #${sourceIdx}</p>
-    <p style="margin-top:1rem;color:#999;font-size:0.85rem">
-      (In full implementation, this shows which concrete example taught this generalization, confidence variance, and catalyst contributions.)
-    </p>
-  `;
-  modal.classList.add('show');
+  alert(`Pattern "${patternKey}" was taught by sentence #${sourceIdx}`);
 }
 
 function stage3Continue() {
@@ -478,7 +611,7 @@ function stage3Continue() {
   }
 
   if (activatedRels.length === 0) {
-    activation.innerHTML = '<div class="empty-state">No patterns learned for this sequence. Teach it first!</div>';
+    activation.innerHTML = '<div class="empty-state">No patterns learned for this sequence. Go to Stage 2 and teach it!</div>';
     document.getElementById('s3Output').innerHTML = '<div class="empty-state">No patterns available</div>';
     return;
   }
@@ -486,18 +619,18 @@ function stage3Continue() {
   activation.innerHTML = activatedRels.map((rel, i) => `
     <div class="activation-node active">
       <div class="node-relation">${rel.from.value} → ${rel.to.value}</div>
-      <div class="node-conf">"${rel.pred.label}" | conf: ${rel.pred.confidence.toFixed(2)}</div>
-      <div class="node-catalysts">via: ${rel.pred.source}</div>
+      <div class="node-conf">"${rel.pred.label}" | confidence: ${rel.pred.confidence.toFixed(2)}</div>
+      <div class="node-catalysts">learned from: ${rel.pred.source}</div>
     </div>
   `).join('');
 
-  const continuation = `Marcus stepped into the office. Sarah was already there, watching. The tension between them crackled like electricity.`;
+  const continuation = `Sarah was already there, watching. The tension crackled between them like electricity.`;
   document.getElementById('s3Output').innerHTML = `<div style="color:#2c2c2c">${continuation}</div>`;
 }
 
 function stage3Clear() {
   document.getElementById('s3Input').value = '';
-  document.getElementById('s3Activation').innerHTML = '<div class="empty-state">Generate above to see which patterns fire</div>';
+  document.getElementById('s3Activation').innerHTML = '<div class="empty-state">Generate above to see the reasoning</div>';
   document.getElementById('s3Output').innerHTML = '<div class="empty-state">Continuation will appear here</div>';
 }
 </script>
