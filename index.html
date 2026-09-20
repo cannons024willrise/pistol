@@ -1,22 +1,250 @@
-<!doctype html><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>PME</title><style>*{box-sizing:border-box}body{margin:0;background:#091028;color:#eee;font:13px system-ui}.c{max-width:1200px;margin:auto;padding:6px}button{padding:5px 8px;border:0;border-radius:4px;background:#0df;font-weight:700}button.x{background:none;color:#eee;border:1px solid #456}input,select,textarea{width:100%;background:#091028;color:#eee;border:1px solid #456;padding:5px}textarea{height:45px}.tabs{display:flex}.tabs button{background:none;color:#aaa}.tabs .on{color:#0df;border-bottom:2px solid}.v{display:none}.on{display:block}.g{display:grid;grid-template-columns:1fr 1fr;gap:6px}@media(max-width:700px){.g{grid-template-columns:1fr}}section>div{background:#18203f;border:1px solid #456;border-radius:5px;padding:6px;margin:5px 0}.row{display:flex;flex-wrap:wrap}.scroll{max-height:210px;overflow:auto}.box{padding:4px;margin:2px 0;background:#0df1;border-left:2px solid #0df}.st{display:grid;grid-template-columns:repeat(4,1fr);gap:2px}.st div{text-align:center;border:1px solid #456;padding:4px}.st b{display:block;color:#0df;font-size:17px}#cv{width:100%;height:230px;background:#091028;border:1px solid #456}.e{color:#f44}.o{color:#0b8}</style><main class=c><nav class=tabs><button class=on onclick=TAB('m',this)>M</button><button onclick=TAB('t',this)>T</button><button onclick=TAB('s',this)>S</button><button onclick=TAB('q',this)>Q</button></nav><section id=m class="v on"><div class=g><div><textarea id=ti placeholder='[{"value":"Sarah","type":"person"}]'></textarea><button onclick=load()>Load</button><button class=x onclick=clearM()>Clear</button><div id=tc></div></div><div><select id=fr></select><select id=to></select><input id=rl placeholder=label><input id=cf type=range min=0 max=1 step=.01 value=.6><div id=cl></div><button onclick=add()>Add</button><button onclick="add(1)">Learn</button><button class=x onclick=SWT()>Rev</button><button class=x onclick=SG()>Suggest</button></div></div><div><canvas id=cv></canvas><div id=rr class=scroll></div></div><div class=g><div><div id=pl class=scroll></div></div><div><div id=lg class=scroll>Ready</div></div></div></section><section id=t class=v><div><div class=g><div><input id=sn placeholder=name><textarea id=sd placeholder=description></textarea><textarea id=sj placeholder='[{"value":"Sarah","type":"person"}]'></textarea><button onclick=START()>Start</button></div><div><select id=tf></select><select id=tt></select><input id=tl placeholder=label><input id=tx type=range min=0 max=1 step=.01 value=.6><div id=cl2></div><button onclick=VAR()>Add</button></div></div><div id=cur>No session</div><button onclick=DONE()>Complete</button><button class=x onclick=CANCEL()>Cancel</button></div></section><section id=s class=v><div><div id=pi></div><button class=x onclick=EXP()>Export</button><button class=x onclick=im.click()>Import</button><button class=x onclick=CLR()>Clear</button><input id=im type=file accept=.json hidden onchange=IMP(event)><div id=si></div></div></section><section id=q class=v><div><div class=st><div><b id=A>0</b>Sessions</div><div><b id=B>0</b>Rels</div><div><b id=C>0</b>Patterns</div><div><b id=E>0</b>Avg</div></div><div id=hist></div></div></section></main><script>
-const $=id=>document.getElementById(id),h=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),L=(x,c)=>{lg.innerHTML+=`<div class=${c||''}>${c?'✓ ':'• '}${h(x)}</div>`};let T={a:[],k:{}},P={p:{},t:{}},R=[],N=0,S=[],U,D;
-T.get=(v,t='')=>{let k=v.toLowerCase()+'|'+t.toLowerCase(),id=T.k[k];return id!==undefined?T.a[id]:(id=T.a.length,T.k[k]=id,T.a[id]={v,t,i:id})};T.one=i=>T.a[i];
-P.k=(a,b)=>a.trim().toLowerCase()+'>'+b.trim().toLowerCase();P.learn=(a,b,at,bt,l,c,z)=>{let k=P.k(a,b),x=P.p[k];if(x){x.n++;x.c=(x.c*(x.n-1)+c)/x.n;x.l=l;z.forEach(y=>{let q=x.z.find(q=>q.v.toLowerCase()==y.v.toLowerCase());q?q.s=(q.s+y.s)/2:x.z.push(y)})}else P.p[k]={a,b,l,c,n:1,z:z.map(y=>({v:y.v,s:y.s}))};if(at&&bt){k=P.k(at,bt);x=P.t[k];x?(x.n++,x.c=(x.c*(x.n-1)+c)/x.n,x.l=l):P.t[k]={l,c,n:1}}};P.pred=(a,b,at,bt)=>{let x=P.p[P.k(a,b)];return x?{l:x.l,c:x.c,z:x.z}:((x=P.t[P.k(at,bt)])?{l:x.l,c:.7*x.c,z:[]}:0)};
-function CAT(el){el.innerHTML=T.a.map(x=>`<label><input type=checkbox data-i=${x.i}>${h(x.v)} <input type=range min=0 max=1 step=.01 value=.5 disabled></label>`).join('');el.querySelectorAll('input[type=checkbox]').forEach(x=>x.onchange=()=>x.nextElementSibling.disabled=!x.checked)}function SEL(){let o=T.a.map(x=>`<option value=${x.i}>${h(x.v)}</option>`).join('');[fr,to,tf,tt].forEach(x=>x.innerHTML=o);CAT(cl);CAT(cl2);tc.innerHTML=T.a.map(x=>`<span>${h(x.v)} </span>`).join('')}
-function CS(e){return[...e.querySelectorAll('input[type=checkbox]:checked')].map(x=>({i:+x.dataset.i,s:+x.nextElementSibling.value}))}
-function load(){try{let x=JSON.parse(ti.value);if(!Array.isArray(x))throw 0;x.forEach(x=>T.get(x.value,x.type||''));SEL();L('Loaded '+x.length+' tokens','o')}catch(e){L('Invalid token JSON','e')}}
-function add(learn){let a=fr.value,b=to.value,l=rl.value.trim(),c=+cf.value,z=CS(cl);if(!a||!b||a==b||!l)return L('Fill relation','e');R.push({i:N++,a:+a,b:+b,l,c,z});MX();learn&&LR(+a,+b,l,c,z);RR();DRAW()}
-function LR(a,b,l,c,z){let x=T.one(a),y=T.one(b);P.learn(x.v,y.v,x.t,y.t,l,c,z.map(q=>({v:T.one(q.i).v,s:q.s})));SP();RP()}
-function RP(){pl.innerHTML=Object.values(P.p).map(x=>`<article>${h(x.a)}→${h(x.b)} ${h(x.l)} ${x.c.toFixed(2)}×${x.n}</article>`).join('')}
-function RR(){rr.innerHTML=R.map(x=>`<article>${h(T.one(x.a).v)}→${h(T.one(x.b).v)} ${h(x.l)} ${x.c.toFixed(2)} <button class=x onclick=REM(${x.i})>×</button></article>`).join('')}
-function MX(){let m=new Map(R.map(r=>[r.i,r.c]));for(let k=3;k--;){let n=new Map;R.forEach(r=>{if(!r.z.length)return n.set(r.i,r.c);let a=0;r.z.forEach(z=>{let q=Math.max(.5,...R.filter(v=>v.a==z.i||v.b==z.i).map(v=>v.c));a+=z.s*q});n.set(r.i,Math.min(1,r.c+.4*a/r.z.length))});m=n}R.forEach(r=>r.c=m.get(r.i))}function REM(i){R=R.filter(x=>x.i!=i);MX();RR();DRAW()}function clearM(){R=[];N=0;T={a:[],k:{}};SEL();RR();DRAW();L('Mesh cleared')}
-function SWT(){[fr.value,to.value]=[to.value,fr.value]}function SG(){let a=T.one(+fr.value),b=T.one(+to.value),x=a&&b&&P.pred(a.v,b.v,a.t,b.t);if(!x)return L('No pattern','e');rl.value=x.l;cf.value=x.c;cl.querySelectorAll('input[type=checkbox]').forEach(q=>{let z=x.z.find(z=>z.v.toLowerCase()==q.parentNode.textContent.trim().split(' ')[0].toLowerCase());if(z){q.checked=1;q.nextElementSibling.disabled=0;q.nextElementSibling.value=z.s}})}
-function DRAW(){let c=cv,x=c.getContext('2d'),w=c.width=c.clientWidth,y=c.height=c.clientHeight,p=T.a.map(v=>({...v,x:20+Math.random()*(w-40),y:20+Math.random()*(y-40)}));x.clearRect(0,0,w,y);R.forEach(r=>{let a=p[r.a],b=p[r.b];if(!a||!b)return;x.strokeStyle='#0df';x.lineWidth=1+3*r.c;x.beginPath();x.moveTo(a.x,a.y);x.lineTo(b.x,b.y);x.stroke()});p.forEach(v=>{x.fillStyle='#0df';x.beginPath();x.arc(v.x,v.y,7,0,7);x.fill();x.fillStyle='#fff';x.font='9px sans-serif';x.textAlign='center';x.fillText(v.v.slice(0,8),v.x,v.y-10)})}
-function START(){try{let x=JSON.parse(sj.value);if(!sn.value.trim()||!Array.isArray(x))throw 0;U={i:sn.value.trim(),d:sd.value.trim(),v:[],a:new Date};T={a:[],k:{}};x.forEach(x=>T.get(x.value,x.type||''));SEL();SHOW()}catch(e){L('Invalid session','e')}}function SHOW(){cur.innerHTML=U?`<article>${h(U.i)} · ${U.v.length}<br>${h(U.d)}<br>${U.v.map(x=>h(x.l)).join('<br>')}</article>`:'No session'}function VAR(){if(!U)return;let a=+tf.value,b=+tt.value,l=tl.value.trim();if(!l)return;U.v.push({a,b,l,c:+tx.value,z:CS(cl2)});SHOW()}
-async function DONE(){if(!U||!U.v.length)return L('Add variation first','e');let m={};U.v.forEach(v=>(m[v.l]??={v:[],z:{}}).v.push(v.c),v.z.forEach(q=>m[v.l].z[q.i]=Math.max(m[v.l].z[q.i]||0,q.s)));Object.values(m).forEach(x=>LR(U.v[0].a,U.v[0].b,x.v[0]&&Object.keys(m).find(k=>m[k]===x),x.v.reduce((a,b)=>a+b,0)/x.v.length,Object.entries(x.z).map(q=>({i:+q[0],s:q[1]}))));U.done=new Date;S.push(U);U=0;SHOW();ST();await SS()}
-function CANCEL(){U=0;SHOW()}function ST(){A.textContent=S.length;B.textContent=S.reduce((a,x)=>a+x.v.length,0);C.textContent=Object.keys(P.p).length;let z=Object.values(P.p);E.textContent=(z.length?z.reduce((a,x)=>a+x.c,0)/z.length:0).toFixed(2);hist.innerHTML=S.map(x=>`<article>${h(x.i)} · ${x.v.length}</article>`).join('');pi.textContent=Object.keys(P.p).length+' patterns';si.textContent=S.length+' sessions'}
-let Q=(s,f)=>new Promise((r,j)=>{let x=D.transaction(s,'readwrite').objectStore(s),q=f(x);q.onerror=()=>j(q.error);q.onsuccess=r});async function SP(){await Q('p',x=>x.put({k:1,d:P,t:new Date}))}async function SS(){let x=D.transaction('s','readwrite'),o=x.objectStore('s');S.forEach(v=>o.put(v));return new Promise(r=>x.oncomplete=r)}
-function EXP(){let u=URL.createObjectURL(new Blob([JSON.stringify({p:P,s:S})],{type:'application/json'})),a=document.createElement('a');a.href=u;a.download='pme.json';a.click();URL.revokeObjectURL(u)}function IMP(e){let r=new FileReader;r.onload=async()=>{try{let x=JSON.parse(r.result);P=x.p||P;S=x.s||[];await SP();await SS();RP();ST()}catch(x){L('Import failed','e')}};r.readAsText(e.target.files[0])}async function CLR(){if(!confirm('Delete all storage?'))return;let x=D.transaction(['p','s'],'readwrite');x.objectStore('p').clear();x.objectStore('s').clear();x.oncomplete=()=>{P={p:{},t:{}};S=[];R=[];N=0;RP();RR();ST()}}
-function TAB(i,b){document.querySelectorAll('.v').forEach(x=>x.classList.remove('on'));document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('on'));$(i).classList.add('on');b.classList.add('on')}
-(async()=>{let x=indexedDB.open('PME',1);x.onupgradeneeded=e=>{e.target.result.createObjectStore('p',{keyPath:'k'});e.target.result.createObjectStore('s',{keyPath:'i'})};x.onsuccess=async()=>{D=x.result;let p=await new Promise(r=>{let q=D.transaction('p').objectStore('p').get(1);q.onsuccess=()=>r(q.result)}),s=await new Promise(r=>{let q=D.transaction('s').objectStore('s').getAll();q.onsuccess=()=>r(q.result)});if(p?.d)P=p.d;S=s||[];SEL();RP();RR();ST();DRAW()}})();onresize=DRAW
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pistol Mesh Engine + Persistent Training</title>
+<style>
+:root{--bg-dark:#0a0e27;--bg-card:#1a2042;--bg-input:#0a0e27;--accent-primary:#00d9ff;--accent-secondary:#a78bfa;--accent-warn:#f59e0b;--text-primary:#e8eef7;--text-secondary:#a0aac4;--border:#2d3a5f;--success:#10b981;--error:#ef4444}*{margin:0;padding:0;box-sizing:border-box}body{background:linear-gradient(135deg,var(--bg-dark) 0,#0f1633 100%);color:var(--text-primary);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;line-height:1.6}.container{max-width:1600px;margin:0 auto;padding:2rem}header{margin-bottom:2rem;border-bottom:1px solid var(--border);padding-bottom:1.5rem}h1{font-size:2.2rem;font-weight:700;margin-bottom:.4rem;background:linear-gradient(90deg,var(--accent-primary),var(--accent-secondary));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}.tagline{color:var(--text-secondary);font-size:.95rem}h2{font-size:1.15rem;margin-bottom:1rem;color:var(--accent-primary);font-weight:600}h3{font-size:.95rem;margin-bottom:.6rem;color:var(--accent-secondary);font-weight:600}.tabs{display:flex;gap:.5rem;margin-bottom:1.5rem;border-bottom:1px solid var(--border);padding-bottom:1rem}button.tab{background:0 0;border:0;color:var(--text-secondary);padding:.5rem 1rem;cursor:pointer;font-weight:600;border-bottom:2px solid transparent;transition:.2s}button.tab:hover{color:var(--text-primary)}button.tab.active{color:var(--accent-primary);border-bottom-color:var(--accent-primary)}.panel{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;margin-bottom:1.5rem}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}@media (max-width:1024px){.grid2{grid-template-columns:1fr}}textarea,select,input[type=text],input[type=number]{width:100%;background:var(--bg-input);border:1px solid var(--border);border-radius:8px;padding:.6rem .8rem;color:var(--text-primary);font-family:'Monaco','Menlo',monospace;font-size:.85rem}textarea{height:100px;resize:vertical}textarea:focus,select:focus,input:focus{outline:0;border-color:var(--accent-primary)}label.field{display:block;font-size:.8rem;color:var(--text-secondary);margin:.7rem 0 .3rem}button{background:linear-gradient(90deg,var(--accent-primary),var(--accent-secondary));border:0;color:#000;padding:.55rem 1.1rem;border-radius:8px;font-weight:600;cursor:pointer;font-size:.85rem;transition:.15s}button:hover{transform:translateY(-1px);box-shadow:0 6px 14px rgba(0,217,255,.2)}button.ghost{background:0 0;border:1px solid var(--border);color:var(--text-primary)}button.small{padding:.3rem .6rem;font-size:.75rem}.row{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.8rem;align-items:center}
+.training-session{background:rgba(0,217,255,.04);border-left:3px solid var(--accent-secondary);border-radius:6px;padding:1rem;margin-bottom:1rem}
+.training-session .head{display:flex;justify-content:space-between;align-items:center;margin-bottom:.6rem;font-weight:600}
+.training-session .meta{font-size:.8rem;color:var(--text-secondary);margin-top:.4rem}
+#meshCanvas{width:100%;height:440px;background:#0a0e27;border:1px solid var(--border);border-radius:8px}
+.scroll{max-height:320px;overflow-y:auto}
+#log{background:#0a0e27;border-radius:8px;padding:1rem;max-height:220px;overflow-y:auto;font-size:.8rem;font-family:monospace;color:var(--text-secondary)}
+#log div{margin-bottom:.2rem}
+.empty{color:var(--text-secondary);font-size:.85rem}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin:1rem 0}
+.stat{background:rgba(0,217,255,.05);padding:1rem;border-radius:8px;border:1px solid var(--border);text-align:center}
+.stat-val{font-size:1.8rem;font-weight:700;color:var(--accent-primary)}
+.stat-label{font-size:.8rem;color:var(--text-secondary);margin-top:.4rem}
+.tab-content{display:none}
+.tab-content.active{display:block}
+.storage-item{background:rgba(0,217,255,.04);border-left:3px solid var(--accent-primary);border-radius:6px;padding:.8rem;margin-bottom:.6rem;font-size:.85rem}
+.storage-item .name{color:var(--accent-primary);font-weight:600}
+.storage-item .meta{color:var(--text-secondary);font-size:.75rem;margin-top:.3rem}
+.success-box{background:rgba(16,185,129,.08);border-left:3px solid var(--success);padding:1rem;border-radius:6px;margin:1rem 0;font-size:.9rem}
+.warn-box{background:rgba(245,158,11,.08);border-left:3px solid var(--accent-warn);padding:1rem;border-radius:6px;margin:1rem 0;font-size:.9rem}
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+<h1>Pistol Mesh Engine</h1>
+<p class="tagline">Persistent training. Everything auto-saves to browser storage. Never lose progress.</p>
+</header>
+
+<div class="tabs">
+<button class="tab active" onclick="switchTab('mesh')">Mesh Engine</button>
+<button class="tab" onclick="switchTab('training')">Training Mode</button>
+<button class="tab" onclick="switchTab('storage')">Storage & Persistence</button>
+<button class="tab" onclick="switchTab('stats')">Training Stats</button>
+</div>
+
+<!-- ===== MESH ENGINE TAB ===== -->
+<div id="mesh" class="tab-content active">
+<div class="grid2">
+<div class="panel">
+<h2>1. Load Token Sequence</h2>
+<textarea id="tokenInput" placeholder='[{"value":"Sarah","type":"person"}]'></textarea>
+<div class="row">
+<button onclick="loadTokens()">Load Tokens</button>
+<button class="ghost" onclick="clearMesh()">Clear Mesh</button>
+</div>
+<h3 style="margin-top:1.2rem;">Tokens</h3>
+<div id="tokenChips" class="empty">No tokens loaded</div>
+</div>
+
+<div class="panel">
+<h2>2. Build Relationship</h2>
+<label class="field">From</label>
+<select id="fromSelect"></select>
+<label class="field">To</label>
+<select id="toSelect"></select>
+<label class="field">Label</label>
+<input type="text" id="relLabel" placeholder="relationship label">
+<label class="field">Base confidence: <span id="baseConfVal">0.60</span></label>
+<input type="range" id="baseConf" min="0" max="1" step="0.01" value="0.6" oninput="document.getElementById('baseConfVal').textContent=this.value">
+<h3 style="margin-top:1rem;">Catalysts</h3>
+<div id="catalystList" class="empty">Load tokens first</div>
+<div class="row">
+<button class="ghost" onclick="suggestFromPattern()">Suggest</button>
+<button class="ghost" onclick="swapFromTo()">Reverse</button>
+</div>
+<div class="row">
+<button onclick="addRelationship(false)">Add to mesh</button>
+<button onclick="addRelationship(true)">Add & learn</button>
+</div>
+</div>
+</div>
+
+<div class="panel">
+<h2>3. Mesh Visualization</h2>
+<canvas id="meshCanvas"></canvas>
+<h3 style="margin-top:1.2rem;">Relationships</h3>
+<div id="relList" class="empty scroll">No relationships yet</div>
+</div>
+
+<div class="grid2">
+<div class="panel">
+<h2>4. Learned Patterns</h2>
+<div id="patternList" class="empty scroll">Nothing learned yet</div>
+</div>
+<div class="panel">
+<h2>Log</h2>
+<div id="log">Initializing from storage...</div>
+</div>
+</div>
+</div>
+
+<!-- ===== TRAINING MODE TAB ===== -->
+<div id="training" class="tab-content">
+<div class="panel">
+<h2>Training Mode</h2>
+
+<div class="grid2">
+<div class="panel" style="margin-bottom:0">
+<h3>New Session</h3>
+<label class="field">Session name</label>
+<input type="text" id="trainingSessionName" placeholder="e.g. scene_1_encounter">
+<label class="field">Description</label>
+<textarea id="trainingSceneDesc" style="height:80px" placeholder="Scene narrative..."></textarea>
+<label class="field">Token JSON</label>
+<textarea id="trainingTokenJson" style="height:100px" placeholder='[{"value":"Sarah","type":"person"}]'></textarea>
+<button onclick="startTrainingSession()">Start Session</button>
+</div>
+
+<div class="panel" style="margin-bottom:0">
+<h3>Add Variation</h3>
+<label class="field">From</label>
+<select id="trainFromSelect"></select>
+<label class="field">To</label>
+<select id="trainToSelect"></select>
+<label class="field">Label</label>
+<input type="text" id="trainRelLabel" placeholder="relationship label">
+<label class="field">Base confidence: <span id="trainConfVal">0.60</span></label>
+<input type="range" id="trainConf" min="0" max="1" step="0.01" value="0.6" oninput="document.getElementById('trainConfVal').textContent=this.value">
+<h3>Catalysts</h3>
+<div id="trainCatalystList" class="empty">Load tokens first</div>
+<div class="row">
+<button onclick="addTrainingRelationship()">Add variation</button>
+</div>
+</div>
+</div>
+
+<h3 style="margin-top:1.5rem;">Current Session</h3>
+<div id="currentSession" class="empty">No active session</div>
+
+<div class="row" style="margin-top:1rem;">
+<button onclick="completeTrainingSession()" style="background:linear-gradient(90deg,var(--accent-secondary),var(--accent-primary))">Complete Session</button>
+<button class="ghost warn" onclick="cancelTrainingSession()">Cancel</button>
+</div>
+</div>
+
+<!-- ===== STORAGE & PERSISTENCE TAB ===== -->
+<div id="storage" class="tab-content">
+<div class="panel">
+<h2>Browser Storage (IndexedDB)</h2>
+
+<div class="success-box">
+<strong>✓ Auto-saving enabled</strong><br>
+All patterns, sessions, and training data are automatically saved to your browser's local storage. If you close and reopen this page, everything persists.
+</div>
+
+<div style="margin-top:2rem;">
+<h3>Pattern Bank (Learned Relationships)</h3>
+<p style="color:var(--text-secondary);margin-bottom:1rem;font-size:.9rem">All relationships the mesh has learned are stored here and auto-loaded on page start.</p>
+<div id="storagePatternsInfo" class="storage-item">
+<div class="name">Loading...</div>
+</div>
+<div class="row">
+<button class="ghost small" onclick="exportAllStorage()">Export all data</button>
+<button class="ghost small" onclick="document.getElementById('importAllFile').click()">Import data</button>
+<button class="ghost small warn" onclick="clearAllStorage()">Clear all storage</button>
+<input type="file" id="importAllFile" accept=".json" style="display:none" onchange="importAllStorage(event)">
+</div>
+</div>
+
+<div style="margin-top:2rem;">
+<h3>Training Sessions Archive</h3>
+<p style="color:var(--text-secondary);margin-bottom:1rem;font-size:.9rem">Complete record of every training session ever run.</p>
+<div id="storageSessionsInfo" class="storage-item">
+<div class="name">Loading...</div>
+</div>
+</div>
+
+<div style="margin-top:2rem;">
+<h3>Storage Statistics</h3>
+<div class="stats">
+<div class="stat">
+<div class="stat-val" id="storagePatternCount">0</div>
+<div class="stat-label">Patterns Stored</div>
+</div>
+<div class="stat">
+<div class="stat-val" id="storageSessionCount">0</div>
+<div class="stat-label">Sessions Logged</div>
+</div>
+<div class="stat">
+<div class="stat-val" id="storageSize">0 KB</div>
+<div class="stat-label">Total Size</div>
+</div>
+<div class="stat">
+<div class="stat-val" id="storageLastUpdate">—</div>
+<div class="stat-label">Last Updated</div>
+</div>
+</div>
+</div>
+
+<div style="margin-top:2rem;">
+<h3>Storage Details</h3>
+<p style="color:var(--text-secondary);font-size:.85rem;line-height:1.6;">
+<strong>What gets saved:</strong><br>
+• Pattern memory (all learned relationships, confidence values, catalyst history)<br>
+• Training sessions (name, description, date, variations)<br>
+• Relationship history (everything you've built in the mesh)<br>
+<br>
+<strong>How it works:</strong><br>
+Every time you add a relationship or complete a training session, the data is automatically written to IndexedDB. When you reload the page, everything is restored instantly.<br>
+<br>
+<strong>Browser storage limit:</strong><br>
+Most browsers allow 50MB+ per origin. For typical use (thousands of patterns and hundreds of sessions), you'll use just a few MB.
+</p>
+</div>
+</div>
+
+<!-- ===== STATS TAB ===== -->
+<div id="stats" class="tab-content">
+<div class="panel">
+<h2>Training Statistics</h2>
+
+<div class="stats">
+<div class="stat">
+<div class="stat-val" id="totalSessions">0</div>
+<div class="stat-label">Sessions Completed</div>
+</div>
+<div class="stat">
+<div class="stat-val" id="totalRelTaught">0</div>
+<div class="stat-label">Relationships Taught</div>
+</div>
+<div class="stat">
+<div class="stat-val" id="totalPatterns">0</div>
+<div class="stat-label">Patterns Learned</div>
+</div>
+<div class="stat">
+<div class="stat-val" id="avgConfidence">0.00</div>
+<div class="stat-label">Avg Confidence</div>
+</div>
+</div>
+
+<h3 style="margin-top:2rem;">Training History</h3>
+<div id="sessionsHistory" class="scroll">No sessions yet</div>
+</div>
+</div>
+
+</div>
+
+<script>
+class TokenStore{constructor(){this.tokens=new Map();this.byKey=new Map()}getOrCreate(e,t){t=(t||"").trim();const a=e.toLowerCase()+"::"+t.toLowerCase();if(this.byKey.has(a))return this.tokens.get(this.byKey.get(a));const r="tok_"+this.tokens.size+"_"+Date.now().toString(36).slice(-4),o={id:r,value:e,type:t};return this.tokens.set(r,o),this.byKey.set(a,r),o}get(e){return this.tokens.get(e)}all(){return Array.from(this.tokens.values())}clear(){this.tokens.clear(),this.byKey.clear()}}class PatternMemory{constructor(){this.pair=new Map(),this.type=new Map()}pk(e,t){return e.trim().toLowerCase()+"->"+t.trim().toLowerCase()}learn(e,t,a,r,o,s,n){const i=this.pk(e,t);if(!this.pair.has(i))this.pair.set(i,{fromVal:e,toVal:t,label:o,avgConfidence:s,count:1,catalysts:n.map(e=>({value:e.value,strength:e.strength}))});else{const l=this.pair.get(i);l.count++,l.avgConfidence=(l.avgConfidence*(l.count-1)+s)/l.count,l.label=o,n.forEach(e=>{const t=l.catalysts.find(t=>t.value.toLowerCase()===e.value.toLowerCase());t?t.strength=(t.strength+e.strength)/2:l.catalysts.push({value:e.value,strength:e.strength})})}if(a&&r){const e=this.pk(a,r);if(!this.type.has(e))this.type.set(e,{label:o,avgConfidence:s,count:1});else{const t=this.type.get(e);t.count++,t.avgConfidence=(t.avgConfidence*(t.count-1)+s)/t.count}}}predict(e,t,a,r){const o=this.pk(e,t);if(this.pair.has(o)){const s=this.pair.get(o);return{label:s.label,confidence:s.avgConfidence,catalysts:s.catalysts,source:"exact pair",count:s.count}}if(a&&r){const e=this.pk(a,r);if(this.type.has(e)){const t=this.type.get(e);return{label:t.label,confidence:.7*t.avgConfidence,catalysts:[],source:"type pattern",count:t.count}}}return null}toJSON(){return{pair:Array.from(this.pair.entries()),type:Array.from(this.type.entries())}}fromJSON(e){this.pair=new Map(e.pair||[]),this.type=new Map(e.type||[])}}let db,tokenStore=new TokenStore,patternMemory=new PatternMemory,relationships=[],relCounter=0,trainingSessions=[],currentTrainingSession=null;async function initStorage(){return new Promise((e,t)=>{const a=indexedDB.open("PistolMeshDB",1);a.onerror=()=>t(a.error),a.onsuccess=()=>{db=a.result,loadStorageData(),e()},a.onupgradeneeded=t=>{const r=t.target.result;r.createObjectStore("patterns",{keyPath:"key"}),r.createObjectStore("sessions",{keyPath:"id"})}})}async function savePatterns(){const e=await new Promise((e,t)=>{const a=db.transaction("patterns","readwrite").objectStore("patterns"),r=a.put({key:"all",data:patternMemory.toJSON(),timestamp:new Date});r.onerror=()=>t(r.error),r.onsuccess=()=>e()});return log("Patterns saved to storage","success"),e}async function loadStorageData(){const e=await new Promise((e,t)=>{const a=db.transaction("patterns","readonly").objectStore("patterns").get("all");a.onerror=()=>t(a.error),a.onsuccess=()=>e(a.result)});if(e&&e.data){patternMemory.fromJSON(e.data),log("Loaded "+patternMemory.pair.size+" patterns from storage","success"),renderPatterns()}const a=await new Promise((e,t)=>{const a=db.transaction("sessions","readonly").objectStore("sessions").getAll();a.onerror=()=>t(a.error),a.onsuccess=()=>e(a.result)});trainingSessions=a||[],updateStats(),updateStorageInfo()}async function saveSessions(){const e=await new Promise((e,t)=>{const a=db.transaction("sessions","readwrite").objectStore("sessions");trainingSessions.forEach(e=>{a.put(e)}),a.oncomplete=()=>e(),a.onerror=()=>t(a.error)});return log("Sessions saved","success"),e}async function exportAllStorage(){const e={patterns:patternMemory.toJSON(),sessions:trainingSessions,timestamp:new Date},t=JSON.stringify(e,null,2),a=new Blob([t],{type:"application/json"}),r=URL.createObjectURL(a),o=document.createElement("a");o.href=r,o.download="pistol-full-backup-"+new Date().toISOString().slice(0,10)+".json",o.click(),URL.revokeObjectURL(r),log("Full backup exported","success")}async function importAllStorage(e){const t=e.target.files[0];if(!t)return;const a=new FileReader;a.onload=async e=>{try{const t=JSON.parse(e.target.result);patternMemory.fromJSON(t.patterns),trainingSessions=t.sessions||[],await savePatterns(),await saveSessions(),renderPatterns(),updateStats(),updateStorageInfo(),log("Import complete: "+t.patterns.pair.length+" patterns, "+t.sessions.length+" sessions","success")}catch(e){log("Import failed: "+e.message,"error")}},a.readAsText(t)}async function clearAllStorage(){if(!confirm("Delete all patterns and sessions? This cannot be undone."))return;const e=await new Promise((e,t)=>{const a=db.transaction(["patterns","sessions"],"readwrite");a.objectStore("patterns").clear(),a.objectStore("sessions").clear(),a.oncomplete=()=>e(),a.onerror=()=>t(a.error)});patternMemory=new PatternMemory,trainingSessions=[],relationships=[],relCounter=0,renderPatterns(),renderRelationships(),updateStats(),log("All storage cleared","error")}async function updateStorageInfo(){const e=patternMemory.pair.size,t=trainingSessions.length,a=JSON.stringify({patterns:patternMemory.toJSON(),sessions:trainingSessions}).length/1024;document.getElementById("storagePatternCount").textContent=e,document.getElementById("storageSessionCount").textContent=t,document.getElementById("storageSize").textContent=a.toFixed(1)+" KB";const r=trainingSessions.length>0?new Date(trainingSessions[trainingSessions.length-1].completedAt).toLocaleTimeString():"—";document.getElementById("storageLastUpdate").textContent=r,document.getElementById("storagePatternsInfo").innerHTML=`<div class="name">Pattern Bank</div><div class="meta">${e} relationship patterns learned and stored</div>`,document.getElementById("storageSessionsInfo").innerHTML=`<div class="name">Training Sessions</div><div class="meta">${t} sessions completed and logged</div>`}function switchTab(e){document.querySelectorAll(".tab-content").forEach(e=>e.classList.remove("active")),document.querySelectorAll("button.tab").forEach(e=>e.classList.remove("active")),document.getElementById(e).classList.add("active"),event.target.classList.add("active")}function loadTokens(){const e=document.getElementById("tokenInput").value.trim();if(!e)return void log("Enter token JSON","error");let t;try{t=JSON.parse(e)}catch(e){return void log("Invalid JSON","error")}if(!Array.isArray(t))return void log("Must be array","error");t.forEach(e=>tokenStore.getOrCreate(e.value,e.type||"")),renderTokenChips(),populateSelects(),log("Loaded "+t.length+" tokens","success")}function renderTokenChips(){const e=document.getElementById("tokenChips"),t=tokenStore.all();0===t.length?(e.innerHTML="",e.className="empty",e.textContent="No tokens loaded"):(e.className="",e.innerHTML=t.map(e=>`<span style="display:inline-flex;align-items:center;gap:.4rem;background:rgba(0,217,255,.08);border:1px solid var(--border);border-radius:20px;padding:.3rem .7rem;font-size:.8rem;margin:.2rem">${escapeHtml(e.value)} <span style="font-size:.65rem;color:var(--text-secondary)">${escapeHtml(e.type||"—")}</span></span>`).join(""))}function populateSelects(){const e=tokenStore.all(),t=e.map(e=>`<option value="${e.id}">${escapeHtml(e.value)}</option>`).join("");document.getElementById("fromSelect").innerHTML=t||'<option value="">—</option>',document.getElementById("toSelect").innerHTML=t||'<option value="">—</option>',document.getElementById("trainFromSelect").innerHTML=t||'<option value="">—</option>',document.getElementById("trainToSelect").innerHTML=t||'<option value="">—</option>',renderCatalystList()}function renderCatalystList(){const e=document.getElementById("catalystList"),t=document.getElementById("trainCatalystList"),a=tokenStore.all();if(0===a.length)return e.className="empty",e.textContent="Load tokens first",t.className="empty",void(t.textContent="Load tokens first");const r=a.map(e=>`<div style="display:flex;align-items:center;gap:.6rem;padding:.4rem .6rem;border-radius:6px;background:rgba(167,139,250,.05);margin-bottom:.4rem;font-size:.82rem"><input type="checkbox" class="cat-check" data-id="${e.id}"><span>${escapeHtml(e.value)}</span><input type="range" class="cat-strength" data-id="${e.id}" min="0" max="1" step="0.01" value="0.5" disabled style="flex:1"><span style="width:2.4rem;text-align:right;color:var(--accent-secondary);font-size:.75rem" id="catval_${e.id}">0.50</span></div>`).join("");e.className="",t.className="",e.innerHTML=r,t.innerHTML=r,[e,t].forEach(e=>{e.querySelectorAll(".cat-check").forEach(t=>{t.addEventListener("change",a=>{const r=a.target.dataset.id,o=e.querySelector(`.cat-strength[data-id="${r}"]`);o.disabled=!a.target.checked})}),e.querySelectorAll(".cat-strength").forEach(t=>{t.addEventListener("input",a=>{document.getElementById("catval_"+a.target.dataset.id).textContent=parseFloat(a.target.value).toFixed(2)})})})}function getSelectedCatalysts(e){const t=document.getElementById(e?"trainCatalystList":"catalystList"),a=[];return t.querySelectorAll(".cat-check:checked").forEach(e=>{const r=e.dataset.id;a.push({tokenId:r,strength:parseFloat(t.querySelector(`.cat-strength[data-id="${r}"]`).value)})}),a}function addRelationship(e){const t=document.getElementById("fromSelect").value,a=document.getElementById("toSelect").value,r=document.getElementById("relLabel").value.trim(),o=parseFloat(document.getElementById("baseConf").value),s=getSelectedCatalysts(!1);if(!t||!a)return void log("Select From and To","error");if(t===a)return void log("From and To must differ","error");if(!r)return void log("Enter label","error");const n={id:"rel_"+(relCounter++),fromId:t,toId:a,label:r,baseConfidence:o,catalysts:s,confidence:o,breakdown:[]};relationships.push(n),e&&(learnRelationship(t,a,r,o,s),renderPatterns()),recomputeMesh(),renderRelationships(),drawMesh()}function learnRelationship(e,t,a,r,o){const s=tokenStore.get(e),n=tokenStore.get(t),i=o.map(e=>({value:tokenStore.get(e.tokenId).value,strength:e.strength}));patternMemory.learn(s.value,n.value,s.type,n.type,a,r,i),savePatterns()}function renderPatterns(){const e=document.getElementById("patternList"),t=Array.from(patternMemory.pair.values());0===t.length?(e.className="empty",e.textContent="Nothing learned yet"):(e.className="scroll",e.innerHTML=t.map(e=>`<div style="background:rgba(167,139,250,.05);border:1px solid var(--border);border-radius:6px;padding:.6rem;margin-bottom:.5rem;font-size:.82rem"><div style="color:var(--accent-secondary);font-weight:600">${escapeHtml(e.fromVal)} → ${escapeHtml(e.toVal)}</div><div style="color:var(--text-secondary);font-size:.75rem;margin-top:.2rem">${escapeHtml(e.label)} · ${e.avgConfidence.toFixed(2)} · ${e.count}x</div></div>`).join(""))}function removeRelationship(e){relationships=relationships.filter(t=>t.id!==e),recomputeMesh(),renderRelationships(),drawMesh()}function clearMesh(){relationships=[],relCounter=0,tokenStore.clear(),document.getElementById("tokenInput").value="",renderTokenChips(),populateSelects(),renderRelationships(),drawMesh(),log("Mesh cleared","info")}function swapFromTo(){const e=document.getElementById("fromSelect"),t=document.getElementById("toSelect"),[a,r]=[e.value,t.value];e.value=r,t.value=a}function suggestFromPattern(){const e=tokenStore.get(document.getElementById("fromSelect").value),t=tokenStore.get(document.getElementById("toSelect").value);if(!e||!t)return void log("Select From and To","error");const a=patternMemory.predict(e.value,t.value,e.type,t.type);if(!a)return void log("No pattern yet","error");document.getElementById("relLabel").value=a.label,document.getElementById("baseConf").value=a.confidence.toFixed(2),document.getElementById("baseConfVal").textContent=a.confidence.toFixed(2);const r=document.getElementById("catalystList");r.querySelectorAll(".cat-check").forEach(e=>{const o=tokenStore.get(e.dataset.id),s=a.catalysts.find(e=>e.value.toLowerCase()===o.value.toLowerCase());if(s){e.checked=!0;const t=r.querySelector(`.cat-strength[data-id="${e.dataset.id}"]`);t.disabled=!1,t.value=s.strength,document.getElementById("catval_"+e.dataset.id).textContent=s.strength.toFixed(2)}}),log("Suggested: "+a.label+" @ "+a.confidence.toFixed(2),"success")}function recomputeMesh(){if(0===relationships.length)return;let e=new Map;relationships.forEach(t=>e.set(t.id,t.baseConfidence));for(let t=0;t<3;t++){const a=new Map,r=t=>{let a=0;relationships.forEach(e=>{(e.fromId===t||e.toId===t)&&(a=Math.max(a,e.confidence))});return a>0?a:.5};relationships.forEach(t=>{if(0===t.catalysts.length)return a.set(t.id,t.baseConfidence),void(t.breakdown=[]);let o=0;const s=t.catalysts.map(e=>{const t=e.strength*r(e.tokenId);return o+=t,{tokenId:e.tokenId,eff:t}});const n=.4*(o/t.catalysts.length),i=Math.min(1,t.baseConfidence+n);a.set(t.id,i),t.breakdown=s.map(e=>({tokenId:e.tokenId,contribution:o>0?(e.eff/o)*n:0}))}),e=a}relationships.forEach(t=>t.confidence=e.get(t.id))}function renderRelationships(){const e=document.getElementById("relList");if(0===relationships.length)return e.className="empty",void(e.textContent="No relationships yet");e.className="scroll",e.innerHTML=relationships.map(e=>{const t=tokenStore.get(e.fromId),a=tokenStore.get(e.toId),r=e.catalysts.length?e.breakdown.map(e=>`<span>${escapeHtml(tokenStore.get(e.tokenId).value)}</span> +${e.contribution.toFixed(2)}`).join(" · "):"none";return`<div style="background:rgba(0,217,255,.04);border-left:3px solid var(--accent-primary);border-radius:6px;padding:.7rem .9rem;margin-bottom:.6rem;font-size:.85rem"><div style="display:flex;justify-content:space-between;align-items:center;font-weight:600"><span>${escapeHtml(t.value)} → ${escapeHtml(a.value)} <span style="color:var(--text-secondary);font-weight:400">(${escapeHtml(e.label)})</span></span><span style="color:var(--accent-primary);font-family:monospace">${e.confidence.toFixed(2)}</span></div><div style="margin-top:.4rem;font-size:.78rem;color:var(--text-secondary)">base ${e.baseConfidence.toFixed(2)} · ${r}</div><button class="ghost small" onclick="removeRelationship('${e.id}')" style="margin-top:.4rem">Remove</button></div>`}).join("")}function drawMesh(){const e=document.getElementById("meshCanvas"),t=e.getContext("2d"),a=e.getBoundingClientRect();e.width=a.width,e.height=a.height,t.clearRect(0,0,e.width,e.height);const r=tokenStore.all();if(0===r.length)return t.fillStyle="#a0aac4",t.textAlign="center",void t.fillText("No graph",e.width/2,e.height/2);const o=new Map;r.forEach(t=>o.set(t.id,{x:60+Math.random()*(e.width-120),y:60+Math.random()*(e.height-120),vx:0,vy:0}));for(let a=0;a<40;a++)r.forEach(t=>{const a=o.get(t.id);r.forEach(r=>{if(t.id===r.id)return;const s=o.get(r.id),n=a.x-s.x,i=a.y-s.y,l=Math.sqrt(n*n+i*i)+1;a.vx+=(n/l)*.6,a.vy+=(i/l)*.6}),a.vx+=.001*(e.width/2-a.x),a.vy+=.001*(e.height/2-a.y)}),r.forEach(t=>{const a=o.get(t.id);a.vx*=.85,a.vy*=.85,a.x+=a.vx,a.y+=a.vy,a.x=Math.max(40,Math.min(e.width-40,a.x)),a.y=Math.max(40,Math.min(e.height-40,a.y))});relationships.forEach(a=>{const r=o.get(a.fromId),s=o.get(a.toId);if(!r||!s)return;const n=.15+.65*a.confidence,i=1+4*a.confidence;t.strokeStyle=`rgba(0,217,255,${n})`,t.lineWidth=i,t.beginPath(),t.moveTo(r.x,r.y),t.lineTo(s.x,s.y),t.stroke();const l=Math.atan2(s.y-r.y,s.x-r.x),c=r.x+.62*(s.x-r.x),h=r.y+.62*(s.y-r.y);t.fillStyle=`rgba(0,217,255,${Math.min(1,n+.2)})`,t.beginPath(),t.moveTo(c+8*Math.cos(l),h+8*Math.sin(l)),t.lineTo(c+5*Math.cos(l+2.4),h+5*Math.sin(l+2.4)),t.lineTo(c+5*Math.cos(l-2.4),h+5*Math.sin(l-2.4)),t.closePath(),t.fill();a.catalysts.forEach((a,n)=>{const i=.3+.12*n,d=r.x+(s.x-r.x)*i,m=r.y+(s.y-r.y)*i-14;t.fillStyle="rgba(167,139,250,.9)",t.beginPath(),t.moveTo(d,m-5),t.lineTo(d+5,m),t.lineTo(d,m+5),t.lineTo(d-5,m),t.closePath(),t.fill();const u=r.x+(s.x-r.x)*i,f=r.y+(s.y-r.y)*i;t.strokeStyle="rgba(167,139,250,.3)",t.lineWidth=1,t.beginPath(),t.moveTo(d,m),t.lineTo(u,f),t.stroke(),t.fillStyle="#a78bfa",t.font="9px monospace",t.textAlign="center",t.fillText(tokenStore.get(a.tokenId).value.substring(0,8),d,m-8)})}),r.forEach(a=>{const r=o.get(a.id);t.fillStyle=((e,t)=>{let a=0;for(let t=0;t<e.length;t++)a=e.charCodeAt(t)+((a<<5)-a);return`hsl(${Math.abs(a)%360}, 70%, 60%)`})(a.type||a.value),t.beginPath(),t.arc(r.x,r.y,9,0,2*Math.PI),t.fill(),t.fillStyle="#e8eef7",t.font="10px sans-serif",t.textAlign="center",t.fillText(a.value.substring(0,10),r.x,r.y-14)})}function escapeHtml(e){return String(e).replace(/[&<>"']/g,e=>({["&"]:"&amp;","<":"&lt;",">":"&gt;",['"']:"&quot;","'":`&#39;`}[e]))}function log(e,t){const a=document.getElementById("log"),r=document.createElement("div");r.style.color="error"===t?"#ef4444":"success"===t?"#10b981":"#a0aac4",r.textContent=("error"===t?"✗ ":"success"===t?"✓ ":"• ")+e,a.appendChild(r),a.scrollTop=a.scrollHeight}function startTrainingSession(){const e=document.getElementById("trainingSessionName").value.trim(),t=document.getElementById("trainingTokenJson").value.trim(),a=document.getElementById("trainingSceneDesc").value.trim();if(!e||!t)return void log("Enter session name and tokens","error");let r;try{r=JSON.parse(t)}catch(e){return void log("Invalid token JSON","error")}currentTrainingSession={id:e,description:a,createdAt:new Date,variations:[],completedAt:null},tokenStore.clear(),r.forEach(e=>tokenStore.getOrCreate(e.value,e.type||"")),populateSelects(),renderTrainingSession(),log("Session started: "+e,"success")}function renderTrainingSession(){const e=document.getElementById("currentSession");currentTrainingSession?(e.className="training-session",e.innerHTML=`<div class="head"><span>${escapeHtml(currentTrainingSession.id)}</span><span>${currentTrainingSession.variations.length} variations</span></div><div style="color:var(--text-secondary);font-size:.85rem;margin-top:.4rem">${escapeHtml(currentTrainingSession.description)}</div><div style="margin-top:.8rem;font-size:.8rem;color:var(--text-secondary)">${currentTrainingSession.variations.map((e,t)=>`<div>${t+1}. ${escapeHtml(e.label)}</div>`).join("")}</div>`):(e.className="empty",e.textContent="No active session")}function addTrainingRelationship(){if(!currentTrainingSession)return void log("Start a session first","error");const e=document.getElementById("trainFromSelect").value,t=document.getElementById("trainToSelect").value,a=document.getElementById("trainRelLabel").value.trim(),r=parseFloat(document.getElementById("trainConf").value),o=getSelectedCatalysts(!0);if(!e||!t||!a)return void log("Fill all fields","error");const s=tokenStore.get(e),n=tokenStore.get(t);currentTrainingSession.variations.push({fromId:e,toId:t,fromVal:s.value,toVal:n.value,label:a,confidence:r,catalysts:o}),renderTrainingSession(),log("Added variation #"+currentTrainingSession.variations.length,"success")}async function completeTrainingSession(){if(!currentTrainingSession||0===currentTrainingSession.variations.length)return void log("Add variations first","error");const e=new Map;currentTrainingSession.variations.forEach(t=>{const a=e.get(t.label)||{label:t.label,fromVal:t.fromVal,toVal:t.toVal,confidences:[],catalysts:new Map};a.confidences.push(t.confidence),t.catalysts.forEach(e=>{a.catalysts.set(e.tokenId,Math.max(a.catalysts.get(e.tokenId)||0,e.strength))}),e.set(t.label,a)}),e.forEach((e,t)=>{const a=Array.from(e.catalysts.entries()).map(e=>({value:tokenStore.get(e[0]).value,strength:e[1]})),r=e.confidences.reduce((e,t)=>e+t,0)/e.confidences.length;learnRelationship(currentTrainingSession.variations[0].fromId,currentTrainingSession.variations[0].toId,e.label,r,a)}),currentTrainingSession.completedAt=new Date,trainingSessions.push(currentTrainingSession),currentTrainingSession=null,document.getElementById("trainingSessionName").value="",document.getElementById("trainingTokenJson").value="",document.getElementById("trainingSceneDesc").value="",renderTrainingSession(),renderPatterns(),updateStats(),await saveSessions(),log("Session complete: "+e.size+" patterns learned","success")}function cancelTrainingSession(){currentTrainingSession=null,renderTrainingSession(),log("Session cancelled","info")}function updateStats(){const e=document.getElementById("totalSessions"),t=document.getElementById("totalRelTaught"),a=document.getElementById("totalPatterns"),r=document.getElementById("avgConfidence"),o=document.getElementById("sessionsHistory");e.textContent=trainingSessions.length,t.textContent=trainingSessions.reduce((e,t)=>e+t.variations.length,0);const s=Array.from(patternMemory.pair.values());a.textContent=s.length;const n=s.length>0?s.reduce((e,t)=>e+t.avgConfidence,0)/s.length:0;r.textContent=n.toFixed(2),o.innerHTML=trainingSessions.map((e,t)=>`<div class="training-session"><div class="head"><span>${t+1}. ${escapeHtml(e.id)}</span><span>${e.variations.length} var</span></div><div class="meta">${new Date(e.completedAt).toLocaleTimeString()}</div></div>`).join("")||'<p class="empty">No sessions yet</p>'}initStorage();
 </script>
+</body>
+</html>
