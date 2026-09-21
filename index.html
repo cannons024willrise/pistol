@@ -16,14 +16,6 @@ header{padding:1.5rem 2rem;border-bottom:1px solid #e0dcd5;background:#fff;flex-
 .help-btn{padding:0.6rem 1.2rem;background:#8b7355;color:#fff;border:none;border-radius:2px;cursor:pointer;font-family:inherit;font-size:0.85rem;font-weight:500;transition:background 0.15s}
 .help-btn:hover{background:#6b5545}
 
-.tabs-header{display:flex;gap:1rem;border-bottom:1px solid #e0dcd5;background:#fff;padding:0 2rem;flex-shrink:0}
-.tab-btn{padding:1rem 1.2rem;background:0;border:0;cursor:pointer;font-family:inherit;font-size:0.95rem;color:#8b8b7f;border-bottom:2px solid transparent;transition:all 0.2s}
-.tab-btn.active{color:#2c2c2c;border-bottom-color:#2c2c2c}
-.tab-btn:hover{color:#2c2c2c}
-
-.tab-content{display:none}
-.tab-content.active{display:flex;flex:1;overflow:hidden}
-
 .workspace{display:flex;flex:1;overflow:hidden;gap:0}
 .stage{display:flex;flex-direction:column;flex:1;border-right:1px solid #e0dcd5;overflow:hidden;min-width:300px;position:relative}
 .stage:last-child{border-right:none}
@@ -58,8 +50,6 @@ input[type="text"]:focus,input[type="color"]:focus,select:focus{outline:0;border
 .token:hover{border-color:#8b7355}
 .token .type{color:#8b7355;font-size:0.7rem}
 .token .value{font-weight:600;color:#2c2c2c}
-
-.token.selectable:hover{background:#fffbf7}
 
 .button-row{display:flex;gap:0.6rem;flex-wrap:wrap}
 button{padding:0.6rem 1.2rem;background:#2c2c2c;color:#fff;border:none;border-radius:2px;cursor:pointer;font-family:inherit;font-size:0.85rem;font-weight:500;transition:background 0.15s;white-space:nowrap}
@@ -102,20 +92,6 @@ label.field-label{display:block;font-size:0.8rem;color:#8b7355;margin-bottom:0.3
 .guide-box{background:#fffbf7;border:1px solid #d4a574;border-left:3px solid #d4a574;padding:0.8rem;border-radius:2px;margin-bottom:1rem;font-size:0.85rem;line-height:1.5}
 .guide-title{font-weight:600;color:#8b7355;margin-bottom:0.3rem}
 
-.modal{display:none;position:fixed;inset:0;background:rgba(44,44,44,0.5);z-index:1000;align-items:center;justify-content:center;padding:1rem}
-.modal.show{display:flex}
-.modal-content{background:#fff;padding:2rem;border-radius:2px;max-width:700px;width:100%;max-height:85vh;overflow-y:auto}
-.modal-close{float:right;cursor:pointer;font-size:1.3rem;color:#999;margin-bottom:1rem;font-weight:700}
-.modal-close:hover{color:#2c2c2c}
-.modal-content h2{font-size:1.3rem;font-weight:400;margin-bottom:1.2rem}
-.modal-content h3{font-size:1rem;font-weight:400;margin-top:1.5rem;margin-bottom:0.8rem;color:#8b7355}
-.modal-content p{font-size:0.95rem;line-height:1.7;margin-bottom:0.8rem;color:#2c2c2c}
-.modal-content ol,.modal-content ul{margin-left:1.5rem;margin-bottom:1rem}
-.modal-content li{margin-bottom:0.5rem;line-height:1.6}
-.example-box{background:#fffbf7;border-left:3px solid #d4a574;padding:1rem;margin:1rem 0;font-family:'Monaco','Menlo',monospace;font-size:0.85rem;line-height:1.5;color:#2c2c2c}
-
-.tokenizer-bank{background:#fff;border:1px solid #e0dcd5;padding:1rem;border-radius:2px;margin-bottom:1rem}
-.tokenizer-bank h4{font-size:0.85rem;color:#8b7355;margin-bottom:0.6rem;font-weight:600}
 .token-type-row{display:flex;align-items:center;gap:0.6rem;margin-bottom:0.5rem;padding:0.5rem;background:#fffbf7;border-radius:2px}
 .token-type-row input[type="text"]{margin:0;flex:1}
 .token-type-row input[type="color"]{width:40px;height:32px;padding:2px;margin:0}
@@ -124,7 +100,20 @@ label.field-label{display:block;font-size:0.8rem;color:#8b7355;margin-bottom:0.3
 .training-pair{display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;padding:0.8rem;background:#fffbf7;border-radius:2px;margin-bottom:0.6rem;border:1px solid #e0dcd5}
 .training-pair .label{font-size:0.75rem;color:#999;margin-bottom:0.2rem}
 .training-pair input{margin:0;padding:0.4rem;font-size:0.8rem}
-.training-pair button{padding:0.4rem 0.8rem;font-size:0.75rem}
+.training-pair select{margin:0;padding:0.4rem;font-size:0.8rem}
+.training-pair button{padding:0.4rem 0.8rem;font-size:0.75rem;grid-column:1/-1}
+
+.learned-vocab{background:#fff;border:1px solid #e0dcd5;padding:1rem;border-radius:2px;max-height:200px;overflow-y:auto}
+.vocab-item{display:flex;align-items:center;gap:0.4rem;padding:0.4rem;background:#fffbf7;border-radius:2px;margin-bottom:0.3rem;font-size:0.8rem}
+.vocab-item .color-dot{width:12px;height:12px;border-radius:2px}
+
+.tabs-within-stage{display:flex;gap:0.6rem;margin-bottom:1rem;border-bottom:1px solid #e0dcd5;padding-bottom:0.8rem}
+.tab-link{padding:0.5rem 1rem;background:0;border:0;cursor:pointer;font-family:inherit;font-size:0.85rem;color:#8b8b7f;border-bottom:2px solid transparent;transition:all 0.2s}
+.tab-link.active{color:#2c2c2c;border-bottom-color:#2c2c2c}
+.tab-link:hover{color:#2c2c2c}
+
+.tab-pane{display:none}
+.tab-pane.active{display:block}
 
 @media (max-width:1200px) {
   .workspace{flex-direction:column}
@@ -142,8 +131,6 @@ label.field-label{display:block;font-size:0.8rem;color:#8b7355;margin-bottom:0.3
   .input-zone{padding:0.8rem}
   textarea{font-size:0.75rem;min-height:45px;padding:0.6rem}
   button{padding:0.5rem 1rem;font-size:0.8rem}
-  .modal-content{padding:1rem;width:95%}
-  .tabs-header{padding:0 1rem}
 }
 </style>
 </head>
@@ -159,16 +146,9 @@ label.field-label{display:block;font-size:0.8rem;color:#8b7355;margin-bottom:0.3
 </div>
 </header>
 
-<div class="tabs-header">
-<button class="tab-btn active" onclick="switchTab('pipeline')">Pipeline</button>
-<button class="tab-btn" onclick="switchTab('tokenizer-training')">Train Tokenizer</button>
-</div>
-
-<!-- PIPELINE TAB -->
-<div id="pipeline" class="tab-content active">
 <div class="workspace" id="workspace">
 
-<!-- STAGE 1: SENTENCE → TOKENS -->
+<!-- STAGE 1: TOKENIZE + TRAIN TOKENIZER -->
 <div class="stage" id="stage1" style="flex:1.2">
 <div class="resizer" onmousedown="startResize(event, 'stage1')"></div>
 <div class="stage-header">
@@ -176,9 +156,16 @@ label.field-label{display:block;font-size:0.8rem;color:#8b7355;margin-bottom:0.3
 <div class="stage-title">Tokenize</div>
 </div>
 <div class="stage-content">
+<div class="tabs-within-stage">
+<button class="tab-link active" onclick="switchStage1Tab('tokenize')">Tokenize Sentence</button>
+<button class="tab-link" onclick="switchStage1Tab('teach')">Teach Tokenizer</button>
+</div>
+
+<!-- TAB: TOKENIZE SENTENCE -->
+<div id="tokenize" class="tab-pane active" style="flex:1;display:flex;flex-direction:column;gap:1rem">
 <div class="guide-box">
 <div class="guide-title">Convert sentences to tokens</div>
-Paste a narrative sentence. The system breaks it into semantic concepts (tokens). The tokenizer uses rules you've taught it.
+Paste a narrative sentence. The system uses the vocabulary you taught it to break it into tokens.
 </div>
 <div class="input-zone">
 <h3>Raw Narrative</h3>
@@ -195,6 +182,54 @@ Paste a narrative sentence. The system breaks it into semantic concepts (tokens)
 </div>
 </div>
 </div>
+
+<!-- TAB: TEACH TOKENIZER -->
+<div id="teach" class="tab-pane" style="flex:1;display:flex;flex-direction:column;gap:1rem">
+<div class="guide-box">
+<div class="guide-title">Teach the tokenizer word types</div>
+Define which words should be recognized as which token types. The tokenizer learns from your examples.
+</div>
+
+<div class="input-zone">
+<h3>Create Token Type</h3>
+<label class="field-label">Type name (e.g., "person", "action", "location")</label>
+<input type="text" id="newTypeName" placeholder="e.g., person">
+<label class="field-label">Color</label>
+<input type="color" id="newTypeColor" value="#8b7355">
+<div class="button-row">
+<button onclick="createTokenType()">Create Type</button>
+</div>
+</div>
+
+<div class="input-zone">
+<h3>Add Words to Type</h3>
+<label class="field-label">Type</label>
+<select id="addWordType"><option value="">Select type</option></select>
+<label class="field-label">Word</label>
+<input type="text" id="addWord" placeholder="e.g., Sarah">
+<div class="button-row">
+<button onclick="addWordToType()">Add Word</button>
+</div>
+</div>
+
+<div class="input-zone">
+<h3>Teach by Example</h3>
+<label class="field-label">Paste a sentence</label>
+<textarea id="teachSentence" placeholder='e.g., "Sarah noticed Marcus entering the office"' style="min-height:50px"></textarea>
+<div class="button-row">
+<button onclick="splitTeachSentence()">Split into words</button>
+</div>
+<div id="teachingPairs" style="margin-top:1rem"></div>
+</div>
+
+<div class="input-zone">
+<h3>Your Vocabulary</h3>
+<div id="learnedVocab" class="learned-vocab">
+<div class="empty-state">No words learned yet</div>
+</div>
+</div>
+</div>
+</div>
 </div>
 
 <!-- STAGE 2: TOKENS → PATTERNS -->
@@ -207,7 +242,7 @@ Paste a narrative sentence. The system breaks it into semantic concepts (tokens)
 <div class="stage-content">
 <div class="guide-box">
 <div class="guide-title">Teach relationships between tokens</div>
-Pick two tokens from the left. Say what their relationship is. The system learns and generalizes.
+Pick two tokens from Stage 1. Say what their relationship is. The system learns and generalizes.
 </div>
 <div class="input-zone">
 <h3>Teach Relationship</h3>
@@ -271,284 +306,37 @@ Type a prompt. The system shows which patterns matched and generates what comes 
 </div>
 
 </div>
-</div>
-
-<!-- TOKENIZER TRAINING TAB -->
-<div id="tokenizer-training" class="tab-content">
-<div style="flex:1;overflow-y:auto;padding:2rem;display:flex;flex-direction:column;gap:1rem">
-<div class="guide-box">
-<div class="guide-title">Teach the tokenizer word types</div>
-Define which words should be recognized as which token types. Add words one at a time with a color/type, or teach by example (paste a sentence and label the words).
-</div>
-
-<div class="tokenizer-bank">
-<h4>Token Types You've Created</h4>
-<div id="tokenTypesList">
-<div class="empty-state">No token types yet. Create one below.</div>
-</div>
-</div>
-
-<div class="input-zone">
-<h3>Create/Edit Token Type</h3>
-<label class="field-label">Type name (e.g., "person", "action", "location")</label>
-<input type="text" id="newTypeName" placeholder="e.g., person">
-<label class="field-label">Color</label>
-<input type="color" id="newTypeColor" value="#8b7355">
-<div class="button-row">
-<button onclick="createTokenType()">Create Type</button>
-</div>
-</div>
-
-<div class="input-zone">
-<h3>Add Words to a Type</h3>
-<label class="field-label">Type</label>
-<select id="addWordType">
-<option value="">Select type</option>
-</select>
-<label class="field-label">Word</label>
-<input type="text" id="addWord" placeholder="e.g., Sarah">
-<div class="button-row">
-<button onclick="addWordToType()">Add Word</button>
-</div>
-</div>
-
-<div class="input-zone">
-<h3>Teach by Example</h3>
-<label class="field-label">Paste a sentence</label>
-<textarea id="teachSentence" placeholder='e.g., "Sarah noticed Marcus entering the office"' style="min-height:50px"></textarea>
-<div class="button-row">
-<button onclick="splitTeachSentence()">Split into words</button>
-</div>
-<div id="teachingPairs" style="margin-top:1rem"></div>
-</div>
-
-<div class="input-zone">
-<h3>Learned Vocabulary</h3>
-<div id="learnedVocab" class="empty-state" style="max-height:300px;overflow-y:auto">
-No words learned yet
-</div>
-</div>
-</div>
-</div>
 
 <!-- HELP MODAL -->
-<div id="guideModal" class="modal">
-<div class="modal-content">
-<span class="modal-close" onclick="closeGuide()">&times;</span>
-<h2>How to Use Pistol</h2>
+<div id="guideModal" class="modal" style="display:none;position:fixed;inset:0;background:rgba(44,44,44,0.5);z-index:1000;align-items:center;justify-content:center;padding:1rem">
+<div style="background:#fff;padding:2rem;border-radius:2px;max-width:700px;width:100%;max-height:85vh;overflow-y:auto">
+<span style="float:right;cursor:pointer;font-size:1.3rem;color:#999;font-weight:700;margin-bottom:1rem" onclick="closeGuide()">&times;</span>
+<h2 style="font-size:1.3rem;font-weight:400;margin-bottom:1.2rem">How to Use Pistol</h2>
 
-<h3>Two-Tab System</h3>
-
-<h3>Tab 1: Pipeline (Training & Generation)</h3>
-<p>The three-stage workflow: tokenize → learn patterns → generate continuations.</p>
-
-<h3>Tab 2: Train Tokenizer</h3>
-<p>Before you can use the pipeline, you need to teach the tokenizer which words are which types. This tab does that.</p>
-
-<h3>Complete Workflow</h3>
-<ol>
-<li><strong>Go to "Train Tokenizer" tab</strong>
-  <ul>
-  <li>Create token types: "person", "action", "location", "object", etc.</li>
-  <li>Add words to each type. Example: "Sarah" and "Marcus" → person type</li>
-  <li>Or paste a sentence and label each word</li>
-  </ul>
-</li>
-<li><strong>Go back to "Pipeline" tab</strong>
-  <ul>
-  <li>Stage 1: Paste a sentence. Click Tokenize. The system uses your vocabulary to label each word.</li>
-  <li>Stage 2: Pick two tokens. Name their relationship. Learn it.</li>
-  <li>Stage 3: Type a prompt. Watch which patterns fire. See the continuation.</li>
-  </ul>
-</li>
+<h3 style="font-size:1rem;font-weight:400;margin-top:1.5rem;margin-bottom:0.8rem;color:#8b7355">Complete Workflow</h3>
+<ol style="margin-left:1.5rem;margin-bottom:1rem">
+<li style="margin-bottom:0.5rem;line-height:1.6"><strong>Stage 1 - Teach Tokenizer Tab:</strong> Create token types ("person", "action", "location"). Add words to each type, or paste sentences and label words.</li>
+<li style="margin-bottom:0.5rem;line-height:1.6"><strong>Stage 1 - Tokenize Sentence Tab:</strong> Paste a sentence. Click Tokenize. The system uses your vocabulary to break it into tokens.</li>
+<li style="margin-bottom:0.5rem;line-height:1.6"><strong>Stage 2:</strong> Pick two tokens. Say their relationship. Click Learn. Teach the same relationship multiple times to raise confidence.</li>
+<li style="margin-bottom:0.5rem;line-height:1.6"><strong>Stage 3:</strong> Type a prompt. Click Generate. See which patterns fired and the generated continuation.</li>
 </ol>
 
-<h3>Tokenizer Training (Tab 2)</h3>
-<p><strong>Method 1: Manual vocabulary building</strong></p>
-<ol>
-<li>Click "Create Type" to make a token type (e.g., "person")</li>
-<li>Use the "Add Words to a Type" section to add words one at a time</li>
-<li>As you add more words, your learned vocabulary grows</li>
-</ol>
+<h3 style="font-size:1rem;font-weight:400;margin-top:1.5rem;margin-bottom:0.8rem;color:#8b7355">Stage 1: Teach Tokenizer</h3>
+<p style="font-size:0.95rem;line-height:1.7;margin-bottom:0.8rem;color:#2c2c2c">The tokenizer needs to learn which words are which types. Two methods:</p>
+<p style="font-size:0.95rem;line-height:1.7;margin-bottom:0.8rem;color:#2c2c2c"><strong>Method 1: Manual</strong> Create a type ("person"), then add words one at a time ("Sarah", "Marcus").</p>
+<p style="font-size:0.95rem;line-height:1.7;margin-bottom:0.8rem;color:#2c2c2c"><strong>Method 2: Teach by Example</strong> Paste a sentence, click "Split into words", label each word with its type, click "Learn these words".</p>
 
-<p><strong>Method 2: Teach by example</strong></p>
-<ol>
-<li>Paste a sentence in "Teach by Example"</li>
-<li>Click "Split into words"</li>
-<li>A form appears with each word. Pick its type from the dropdown.</li>
-<li>Click "Learn these words"</li>
-<li>All words are added to the vocabulary at once</li>
-</ol>
-
-<h3>Pipeline (Tab 1)</h3>
-<p><strong>Stage 1: Tokenize</strong></p>
-<ul>
-<li>Paste a sentence (e.g., "Sarah noticed Marcus entering the office")</li>
-<li>Click "Tokenize"</li>
-<li>The system looks up each word in your learned vocabulary and assigns types</li>
-<li>Unknown words get type "entity"</li>
-</ul>
-
-<p><strong>Stage 2: Learn Patterns</strong></p>
-<ul>
-<li>A dropdown shows tokens from the sentence</li>
-<li>Pick "From" and "To" tokens (e.g., Marcus → office)</li>
-<li>Type the relationship label (e.g., "enter")</li>
-<li>Click "Learn This"</li>
-<li>The system learns both concrete (Marcus→office) and generalized (person→location) patterns</li>
-<li>Teach the same relationship multiple ways to raise confidence</li>
-</ul>
-
-<p><strong>Stage 3: Generate</strong></p>
-<ul>
-<li>Type a prompt (e.g., "Marcus walked into the office")</li>
-<li>Click "Generate"</li>
-<li>See "Activated Relationships": which patterns matched?</li>
-<li>See "Generated Continuation": the story output</li>
-<li>If a pattern doesn't exist, go back to Stage 2 and teach it</li>
-</ul>
-
-<h3>Pro Tips</h3>
-<ul>
-<li>Build your tokenizer vocabulary first. The better it is, the cleaner your tokens.</li>
-<li>Start with small examples. Teach relationships for one scene before testing generation.</li>
-<li>Teach the same relationship 3+ times (different sentences) to build confidence.</li>
-<li>If generation seems wrong, check Stage 3's "Activated Relationships" to see what patterns fired.</li>
+<h3 style="font-size:1rem;font-weight:400;margin-top:1.5rem;margin-bottom:0.8rem;color:#8b7355">Pro Tips</h3>
+<ul style="margin-left:1.5rem;margin-bottom:1rem">
+<li style="margin-bottom:0.5rem;line-height:1.6">Build your tokenizer vocabulary first (Stage 1, Teach tab) before you tokenize sentences.</li>
+<li style="margin-bottom:0.5rem;line-height:1.6">Teach relationships (Stage 2) multiple times to raise confidence. Example: teach "person → location = enter" from 3 different sentences.</li>
+<li style="margin-bottom:0.5rem;line-height:1.6">If generation fails, check Stage 3's "Which patterns matched?" to see if a pattern is missing. Go back to Stage 2 and teach it.</li>
 </ul>
 </div>
 </div>
 
 <script>
-function switchTab(tabName) {
-  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-  document.getElementById(tabName).classList.add('active');
-  event.target.classList.add('active');
-}
-
-function openGuide() {
-  document.getElementById('guideModal').classList.add('show');
-}
-
-function closeGuide() {
-  document.getElementById('guideModal').classList.remove('show');
-}
-
-// TOKENIZER TRAINING
-let tokenTypes = new Map(); // name -> {color, words: Set}
-let vocabulary = new Map(); // word -> type
-
-function createTokenType() {
-  const name = document.getElementById('newTypeName').value.trim();
-  const color = document.getElementById('newTypeColor').value;
-  if (!name) return alert('Enter type name');
-  if (tokenTypes.has(name)) return alert('Type already exists');
-  tokenTypes.set(name, { color, words: new Set() });
-  document.getElementById('newTypeName').value = '';
-  renderTokenTypes();
-  populateTypeSelects();
-}
-
-function deleteTokenType(name) {
-  if (!confirm(`Delete type "${name}"?`)) return;
-  tokenTypes.delete(name);
-  renderTokenTypes();
-  populateTypeSelects();
-}
-
-function renderTokenTypes() {
-  const container = document.getElementById('tokenTypesList');
-  if (tokenTypes.size === 0) {
-    container.innerHTML = '<div class="empty-state">No token types yet. Create one below.</div>';
-    return;
-  }
-  container.innerHTML = Array.from(tokenTypes.entries()).map(([name, data]) => `
-    <div class="token-type-row">
-      <div style="display:flex;align-items:center;gap:0.4rem;flex:1">
-        <div style="width:20px;height:20px;background:${data.color};border-radius:3px"></div>
-        <strong>${name}</strong>
-        <span style="color:#999;font-size:0.75rem">${data.words.size} words</span>
-      </div>
-      <button class="small secondary" onclick="deleteTokenType('${name}')">Delete</button>
-    </div>
-  `).join('');
-}
-
-function addWordToType() {
-  const typeName = document.getElementById('addWordType').value;
-  const word = document.getElementById('addWord').value.trim();
-  if (!typeName || !word) return alert('Select type and enter word');
-  if (!tokenTypes.has(typeName)) return alert('Type not found');
-  tokenTypes.get(typeName).words.add(word);
-  vocabulary.set(word.toLowerCase(), typeName);
-  document.getElementById('addWord').value = '';
-  renderVocabulary();
-}
-
-function splitTeachSentence() {
-  const sentence = document.getElementById('teachSentence').value.trim();
-  if (!sentence) return alert('Paste a sentence');
-  const words = sentence.split(/\s+/);
-  const html = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.6rem">` +
-    words.map(w => `
-      <div class="training-pair">
-        <div>
-          <div class="label">Word</div>
-          <input type="text" readonly value="${w}">
-        </div>
-        <div>
-          <div class="label">Type</div>
-          <select class="word-type-select" data-word="${w}">
-            <option value="">Select type</option>
-            ${Array.from(tokenTypes.keys()).map(t => `<option value="${t}">${t}</option>`).join('')}
-          </select>
-        </div>
-      </div>
-    `).join('') + `</div>
-    <div class="button-row" style="margin-top:1rem">
-      <button onclick="learnTeachPairs()">Learn these words</button>
-    </div>`;
-  document.getElementById('teachingPairs').innerHTML = html;
-}
-
-function learnTeachPairs() {
-  document.querySelectorAll('.word-type-select').forEach(sel => {
-    const word = sel.dataset.word;
-    const type = sel.value;
-    if (type) {
-      tokenTypes.get(type).words.add(word);
-      vocabulary.set(word.toLowerCase(), type);
-    }
-  });
-  document.getElementById('teachingPairs').innerHTML = '';
-  document.getElementById('teachSentence').value = '';
-  renderVocabulary();
-  renderTokenTypes();
-}
-
-function renderVocabulary() {
-  const container = document.getElementById('learnedVocab');
-  if (vocabulary.size === 0) {
-    container.innerHTML = '<div class="empty-state">No words learned yet</div>';
-    return;
-  }
-  const sorted = Array.from(vocabulary.entries()).sort();
-  container.innerHTML = sorted.map(([word, type]) => {
-    const color = tokenTypes.get(type)?.color || '#999';
-    return `<div style="display:flex;align-items:center;gap:0.4rem;padding:0.4rem;background:#fff;border-radius:2px;margin-bottom:0.3rem;font-size:0.8rem">
-      <div style="width:12px;height:12px;background:${color};border-radius:2px"></div>
-      <span style="font-family:monospace;font-weight:600">${word}</span>
-      <span style="color:#999">→ ${type}</span>
-    </div>`;
-  }).join('');
-}
-
-function populateTypeSelects() {
-  const options = '<option value="">Select type</option>' + Array.from(tokenTypes.keys()).map(t => `<option value="${t}">${t}</option>`).join('');
-  document.getElementById('addWordType').innerHTML = options;
-}
-
-// PATTERN MEMORY CLASS
+// Pattern Memory Class
 class PatternMemory {
   constructor() {
     this.patterns = new Map();
@@ -613,12 +401,107 @@ class PatternMemory {
   }
 }
 
-// PIPELINE FUNCTIONS
-let tokenStore = [];
+// State
+let tokenTypes = new Map();
+let vocabulary = new Map();
 let patterns = new PatternMemory();
 let sentenceIndex = 0;
 let currentTokens = [];
 
+// Stage 1 tabs
+function switchStage1Tab(tabName) {
+  document.querySelectorAll('#stage1 .tab-pane').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('#stage1 .tab-link').forEach(el => el.classList.remove('active'));
+  document.getElementById(tabName).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// Tokenizer Training
+function createTokenType() {
+  const name = document.getElementById('newTypeName').value.trim();
+  const color = document.getElementById('newTypeColor').value;
+  if (!name) return alert('Enter type name');
+  if (tokenTypes.has(name)) return alert('Type already exists');
+  tokenTypes.set(name, { color, words: new Set() });
+  document.getElementById('newTypeName').value = '';
+  populateTypeSelects();
+  renderVocabulary();
+}
+
+function addWordToType() {
+  const typeName = document.getElementById('addWordType').value;
+  const word = document.getElementById('addWord').value.trim();
+  if (!typeName || !word) return alert('Select type and enter word');
+  if (!tokenTypes.has(typeName)) return alert('Type not found');
+  tokenTypes.get(typeName).words.add(word);
+  vocabulary.set(word.toLowerCase(), typeName);
+  document.getElementById('addWord').value = '';
+  renderVocabulary();
+}
+
+function splitTeachSentence() {
+  const sentence = document.getElementById('teachSentence').value.trim();
+  if (!sentence) return alert('Paste a sentence');
+  const words = sentence.split(/\s+/);
+  const html = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.6rem">` +
+    words.map(w => `
+      <div class="training-pair">
+        <div>
+          <div class="label">Word</div>
+          <input type="text" readonly value="${w}">
+        </div>
+        <div>
+          <div class="label">Type</div>
+          <select class="word-type-select" data-word="${w}">
+            <option value="">Select type</option>
+            ${Array.from(tokenTypes.keys()).map(t => `<option value="${t}">${t}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+    `).join('') + `</div>
+    <div class="button-row" style="margin-top:1rem">
+      <button onclick="learnTeachPairs()">Learn these words</button>
+    </div>`;
+  document.getElementById('teachingPairs').innerHTML = html;
+}
+
+function learnTeachPairs() {
+  document.querySelectorAll('.word-type-select').forEach(sel => {
+    const word = sel.dataset.word;
+    const type = sel.value;
+    if (type) {
+      tokenTypes.get(type).words.add(word);
+      vocabulary.set(word.toLowerCase(), type);
+    }
+  });
+  document.getElementById('teachingPairs').innerHTML = '';
+  document.getElementById('teachSentence').value = '';
+  renderVocabulary();
+}
+
+function renderVocabulary() {
+  const container = document.getElementById('learnedVocab');
+  if (vocabulary.size === 0) {
+    container.innerHTML = '<div class="empty-state">No words learned yet</div>';
+    return;
+  }
+  const sorted = Array.from(vocabulary.entries()).sort();
+  container.innerHTML = sorted.map(([word, type]) => {
+    const color = tokenTypes.get(type)?.color || '#999';
+    return `<div class="vocab-item">
+      <div class="color-dot" style="background:${color}"></div>
+      <span style="font-family:monospace;font-weight:600">${word}</span>
+      <span style="color:#999">→ ${type}</span>
+    </div>`;
+  }).join('');
+}
+
+function populateTypeSelects() {
+  const options = '<option value="">Select type</option>' + Array.from(tokenTypes.keys()).map(t => `<option value="${t}">${t}</option>`).join('');
+  document.getElementById('addWordType').innerHTML = options;
+}
+
+// Stage 1 Tokenize
 function stage1Tokenize() {
   const text = document.getElementById('s1Input').value.trim();
   if (!text) return alert('Paste a sentence');
@@ -665,6 +548,7 @@ function renderCatalystUI() {
     `).join('');
 }
 
+// Stage 2
 function stage2Learn() {
   const fromIdx = parseInt(document.getElementById('s2From').value);
   const toIdx = parseInt(document.getElementById('s2To').value);
@@ -723,12 +607,13 @@ function renderPatterns() {
       <div class="pattern-label">"${p.label}"</div>
       <div class="pattern-catalysts">Catalysts: ${p.catalysts.length ? p.catalysts.map(c => `${c.value}(${c.strength.toFixed(2)})`).join(', ') : 'none'}</div>
       <div class="pattern-sources">
-        <strong>Sources:</strong> ${p.sources.map((s, i) => `<span class="source-link" onclick="alert('Sentence ${s}')">S${s}</span>`).join(' ')}
+        <strong>Sources:</strong> ${p.sources.map((s, i) => `<span class="source-link">S${s}</span>`).join(' ')}
       </div>
     </div>
   `).join('');
 }
 
+// Stage 3
 function stage3Continue() {
   const prompt = document.getElementById('s3Input').value.trim();
   if (!prompt) return alert('Type a prompt');
@@ -772,7 +657,7 @@ function stage3Clear() {
   document.getElementById('s3Output').innerHTML = '<div class="empty-state">Continuation will appear here</div>';
 }
 
-// Resize
+// Resizing
 let resizingStage = null;
 let startX = 0;
 let startWidth = 0;
@@ -798,6 +683,15 @@ function stopResize() {
   resizingStage = null;
   document.removeEventListener('mousemove', resize);
   document.removeEventListener('mouseup', stopResize);
+}
+
+// Guide
+function openGuide() {
+  document.getElementById('guideModal').style.display = 'flex';
+}
+
+function closeGuide() {
+  document.getElementById('guideModal').style.display = 'none';
 }
 </script>
 
