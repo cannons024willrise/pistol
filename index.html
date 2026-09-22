@@ -3,134 +3,84 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pistol: Three-Stage Training Pipeline</title>
+<title>Pistol: Context + Lemma Learning</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{width:100%;height:100%;font-family:'Georgia', serif}
 body{background:#fafaf7;color:#2c2c2c;display:flex;flex-direction:column;overflow:hidden}
 
-header{padding:1.5rem 2rem;border-bottom:1px solid #e0dcd5;background:#fff;flex-shrink:0;display:flex;justify-content:space-between;align-items:center}
-.header-left h1{font-size:1.8rem;font-weight:400;letter-spacing:-0.02em;margin-bottom:0.2rem}
-.subtitle{font-size:0.9rem;color:#8b8b7f}
-.header-right{display:flex;gap:0.8rem;align-items:center}
-.help-btn{padding:0.6rem 1.2rem;background:#8b7355;color:#fff;border:none;border-radius:2px;cursor:pointer;font-family:inherit;font-size:0.85rem;font-weight:500;transition:background 0.15s}
-.help-btn:hover{background:#6b5545}
+header{padding:1.5rem 2rem;border-bottom:1px solid #e0dcd5;background:#fff;flex-shrink:0}
+.header-left h1{font-size:1.8rem;font-weight:400;letter-spacing:-0.02em}
+.subtitle{font-size:0.9rem;color:#8b8b7f;margin-top:0.2rem}
+
+.tabs-main{display:flex;gap:1rem;border-bottom:1px solid #e0dcd5;padding:1rem 2rem;background:#fff;flex-shrink:0}
+.tab-main{padding:0.5rem 1rem;background:0;border:0;cursor:pointer;font-family:inherit;font-size:0.95rem;color:#8b8b7f;border-bottom:2px solid transparent}
+.tab-main.active{color:#2c2c2c;border-bottom-color:#2c2c2c}
 
 .workspace{display:flex;flex:1;overflow:hidden;gap:0}
-.stage{display:flex;flex-direction:column;flex:1;border-right:1px solid #e0dcd5;overflow:hidden;min-width:300px;position:relative}
+.stage{display:flex;flex-direction:column;flex:1;border-right:1px solid #e0dcd5;overflow:hidden;min-width:300px}
 .stage:last-child{border-right:none}
-
-.resizer{position:absolute;right:0;top:0;bottom:0;width:6px;cursor:col-resize;background:transparent;transition:background 0.2s}
-.resizer:hover{background:#d4cfc5}
-.stage:last-child .resizer{display:none}
 
 .stage-header{padding:1rem 1.5rem;background:#f5f3f0;border-bottom:1px solid #e0dcd5;flex-shrink:0}
 .stage-num{font-size:0.75rem;letter-spacing:0.1em;color:#999;text-transform:uppercase;font-weight:600}
-.stage-title{font-size:1.1rem;font-weight:400;margin-top:0.3rem;color:#2c2c2c}
+.stage-title{font-size:1.1rem;font-weight:400;margin-top:0.3rem}
 
 .stage-content{flex:1;overflow-y:auto;padding:1.5rem;display:flex;flex-direction:column;gap:1rem}
 .stage-content::-webkit-scrollbar{width:6px}
-.stage-content::-webkit-scrollbar-track{background:transparent}
-.stage-content::-webkit-scrollbar-thumb{background:#d4cfc5;border-radius:3px}
-.stage-content::-webkit-scrollbar-thumb:hover{background:#8b8b7f}
+.stage-content::-webkit-scrollbar-thumb{background:#d4cfc5}
 
 .input-zone{background:#fff;border:1px solid #e0dcd5;padding:1rem;border-radius:2px}
-.input-zone h3{font-size:0.8rem;color:#999;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.6rem;font-weight:600}
+.input-zone h3{font-size:0.75rem;color:#999;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.6rem;font-weight:600}
 
-textarea{width:100%;font-family:'Monaco','Menlo',monospace;font-size:0.8rem;padding:0.8rem;border:1px solid #e0dcd5;border-radius:2px;resize:none;min-height:50px;line-height:1.5;color:#2c2c2c}
-textarea:focus{outline:0;border-color:#2c2c2c;background:#fffbf7}
+textarea,input[type="text"],select{width:100%;padding:0.6rem;border:1px solid #e0dcd5;border-radius:2px;font-family:inherit;font-size:0.9rem;background:#fff;color:#2c2c2c;margin-bottom:0.6rem}
+textarea{font-family:'Monaco','Menlo',monospace;font-size:0.8rem;min-height:80px;line-height:1.5;resize:none}
+textarea:focus,input:focus{outline:0;border-color:#2c2c2c;background:#fffbf7}
 
-input[type="text"],input[type="color"],select{width:100%;padding:0.6rem;border:1px solid #e0dcd5;border-radius:2px;font-family:inherit;font-size:0.9rem;background:#fff;color:#2c2c2c;margin-bottom:0.6rem}
-input[type="text"]:focus,input[type="color"]:focus,select:focus{outline:0;border-color:#2c2c2c;background:#fffbf7}
-
-.token-display{background:#fffbf7;border:1px solid #e0dcd5;padding:1rem;border-radius:2px;min-height:50px}
-.token-display .label{font-size:0.8rem;color:#999;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.6rem;font-weight:600}
-.token-list{display:flex;flex-wrap:wrap;gap:0.4rem}
-.token{display:inline-flex;align-items:center;gap:0.3rem;padding:0.4rem 0.7rem;background:#fff;border:1px solid #d4cfc5;border-radius:16px;font-size:0.8rem;font-family:'Monaco','Menlo',monospace;cursor:pointer;transition:all 0.2s}
-.token:hover{border-color:#8b7355}
-.token .type{color:#8b7355;font-size:0.7rem}
-.token .value{font-weight:600;color:#2c2c2c}
-
-.button-row{display:flex;gap:0.6rem;flex-wrap:wrap}
-button{padding:0.6rem 1.2rem;background:#2c2c2c;color:#fff;border:none;border-radius:2px;cursor:pointer;font-family:inherit;font-size:0.85rem;font-weight:500;transition:background 0.15s;white-space:nowrap}
+button{padding:0.6rem 1.2rem;background:#2c2c2c;color:#fff;border:none;border-radius:2px;cursor:pointer;font-size:0.85rem;font-weight:500}
 button:hover{background:#1a1a1a}
-button:active{transform:scale(0.98)}
 button.secondary{background:#e0dcd5;color:#2c2c2c}
 button.secondary:hover{background:#d4cfc5}
 
-.pattern-viewer,.activation-graph{background:#fffbf7;border:1px solid #e0dcd5;padding:1rem;border-radius:2px;overflow-y:auto;flex:1}
-.pattern-viewer::-webkit-scrollbar,.activation-graph::-webkit-scrollbar{width:6px}
-.pattern-viewer::-webkit-scrollbar-track,.activation-graph::-webkit-scrollbar-track{background:transparent}
-.pattern-viewer::-webkit-scrollbar-thumb,.activation-graph::-webkit-scrollbar-thumb{background:#d4cfc5;border-radius:3px}
-
-.pattern-item{padding:0.8rem;background:#fff;border-left:3px solid #8b7355;margin-bottom:0.6rem;border-radius:2px;font-size:0.85rem;line-height:1.5}
-.pattern-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.4rem;gap:0.5rem}
-.pattern-from-to{font-weight:600;font-family:'Monaco','Menlo',monospace;color:#2c2c2c;flex-shrink:0}
-.pattern-conf{color:#8b7355;font-size:0.8rem;flex-shrink:0}
-.pattern-label{color:#333;margin:0.3rem 0;font-size:0.85rem}
-.pattern-catalysts{color:#8b7355;font-size:0.75rem;margin:0.3rem 0}
-.pattern-sources{color:#999;font-size:0.7rem;margin-top:0.4rem;padding-top:0.4rem;border-top:1px solid #e0dcd5}
-.source-link{display:inline-block;margin-right:0.3rem;padding:0.2rem 0.4rem;background:#e0dcd5;border-radius:2px;cursor:pointer;font-size:0.7rem}
-.source-link:hover{background:#d4cfc5}
-
-.activation-node{padding:0.7rem;background:#fff;border-left:2px solid #8b7355;margin-bottom:0.5rem;border-radius:2px;font-size:0.8rem;font-family:'Monaco','Menlo',monospace}
-.activation-node.active{border-left-color:#d4a574;background:#fffbf7}
-.node-relation{color:#2c2c2c;font-weight:600;margin-bottom:0.2rem;font-size:0.85rem}
-.node-conf{color:#8b7355;font-size:0.75rem}
-.node-catalysts{color:#999;font-size:0.7rem;margin-top:0.2rem}
-
-.output-box{background:#fff;border:2px solid #8b7355;padding:1rem;border-radius:2px;min-height:80px;overflow-y:auto;flex:1}
-.output-label{font-size:0.8rem;color:#999;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.6rem;font-weight:600;display:block}
-.output-prose{font-size:0.95rem;line-height:1.7;color:#2c2c2c}
-
-.empty-state{color:#999;font-style:italic;text-align:center;padding:1.5rem 0.5rem;font-size:0.85rem}
-
-.flex-grow{flex:1}
-
-label.field-label{display:block;font-size:0.8rem;color:#8b7355;margin-bottom:0.3rem;font-weight:600}
-
 .guide-box{background:#fffbf7;border:1px solid #d4a574;border-left:3px solid #d4a574;padding:0.8rem;border-radius:2px;margin-bottom:1rem;font-size:0.85rem;line-height:1.5}
-.guide-title{font-weight:600;color:#8b7355;margin-bottom:0.3rem}
 
-.token-type-row{display:flex;align-items:center;gap:0.6rem;margin-bottom:0.5rem;padding:0.5rem;background:#fffbf7;border-radius:2px}
-.token-type-row input[type="text"]{margin:0;flex:1}
-.token-type-row input[type="color"]{width:40px;height:32px;padding:2px;margin:0}
-.token-type-row button.small{padding:0.4rem 0.8rem;font-size:0.75rem;margin:0}
+.sentence-editor{background:#fff;border:1px solid #e0dcd5;padding:1rem;border-radius:2px;line-height:2}
+.word-token{display:inline-block;padding:0.3rem 0.5rem;margin:0.2rem;border-radius:3px;cursor:pointer;border:1px solid #e0dcd5;background:#fff;transition:all 0.15s}
+.word-token:hover{background:#fffbf7;border-color:#2c2c2c}
+.word-token.selected{background:#d4a574;color:#fff;border-color:#d4a574}
+.word-token.tagged{border:2px solid #8b7355;font-weight:600}
 
-.training-pair{display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;padding:0.8rem;background:#fffbf7;border-radius:2px;margin-bottom:0.6rem;border:1px solid #e0dcd5}
-.training-pair .label{font-size:0.75rem;color:#999;margin-bottom:0.2rem}
-.training-pair input{margin:0;padding:0.4rem;font-size:0.8rem}
-.training-pair select{margin:0;padding:0.4rem;font-size:0.8rem}
-.training-pair button{padding:0.4rem 0.8rem;font-size:0.75rem;grid-column:1/-1}
+.context-view{background:#fffbf7;border:1px solid #e0dcd5;padding:1rem;border-radius:2px;overflow-y:auto;flex:1;font-size:0.85rem}
+.context-item{padding:0.6rem;background:#fff;margin-bottom:0.4rem;border-left:3px solid #8b7355;border-radius:2px}
 
-.learned-vocab{background:#fff;border:1px solid #e0dcd5;padding:1rem;border-radius:2px;max-height:200px;overflow-y:auto}
-.vocab-item{display:flex;align-items:center;gap:0.4rem;padding:0.4rem;background:#fffbf7;border-radius:2px;margin-bottom:0.3rem;font-size:0.8rem}
-.vocab-item .color-dot{width:12px;height:12px;border-radius:2px}
+.token-display{background:#fffbf7;border:1px solid #e0dcd5;padding:1rem;border-radius:2px;min-height:60px}
+.token-display .label{font-size:0.75rem;color:#999;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.6rem;font-weight:600}
+.token-list{display:flex;flex-wrap:wrap;gap:0.4rem}
+.token{display:inline-flex;align-items:center;gap:0.3rem;padding:0.4rem 0.7rem;background:#fff;border:1px solid #d4cfc5;border-radius:14px;font-size:0.75rem;font-family:'Monaco',monospace}
+.token .value{font-weight:600}
+.token .type{color:#8b7355}
+.token .conf{font-size:0.65rem;color:#999}
 
-.tabs-within-stage{display:flex;gap:0.6rem;margin-bottom:1rem;border-bottom:1px solid #e0dcd5;padding-bottom:0.8rem}
-.tab-link{padding:0.5rem 1rem;background:0;border:0;cursor:pointer;font-family:inherit;font-size:0.85rem;color:#8b8b7f;border-bottom:2px solid transparent;transition:all 0.2s}
-.tab-link.active{color:#2c2c2c;border-bottom-color:#2c2c2c}
-.tab-link:hover{color:#2c2c2c}
+.empty-state{color:#999;font-style:italic;text-align:center;padding:1rem}
+
+.storage-status{background:#fffbf7;border:1px solid #d4a574;border-left:3px solid #d4a574;padding:0.8rem;border-radius:2px;font-size:0.8rem;margin-bottom:1rem}
+
+.search-result{padding:0.8rem;background:#fff;border-left:3px solid #8b7355;margin-bottom:0.6rem;border-radius:2px;cursor:pointer}
+.search-result:hover{background:#fffbf7}
+.result-lemma{font-weight:600;font-family:'Monaco',monospace;color:#2c2c2c}
+.result-forms{font-size:0.75rem;color:#8b8b7f;margin-top:0.3rem}
+.result-contexts{font-size:0.75rem;color:#8b7355;margin-top:0.2rem}
+
+.lemma-family{padding:1rem;background:#fff;border:1px solid #d4cfc5;border-radius:2px;margin-bottom:1rem}
+.lemma-header{font-weight:600;font-family:'Monaco',monospace;color:#2c2c2c;margin-bottom:0.6rem;font-size:1rem}
+.form-list{display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.8rem}
+.form-badge{padding:0.3rem 0.6rem;background:#fffbf7;border:1px solid #d4cfc5;border-radius:3px;font-size:0.8rem;font-family:'Monaco',monospace}
 
 .tab-pane{display:none}
 .tab-pane.active{display:block}
 
 @media (max-width:1200px) {
   .workspace{flex-direction:column}
-  .stage{border-right:none;border-bottom:1px solid #e0dcd5;flex-basis:auto;min-height:350px}
-  .stage:last-child{border-bottom:none}
-  .resizer{display:none}
-}
-
-@media (max-width:768px) {
-  header{flex-direction:column;align-items:flex-start;gap:1rem}
-  h1{font-size:1.4rem}
-  .stage-header{padding:0.8rem 1rem}
-  .stage-title{font-size:1rem}
-  .stage-content{padding:1rem;gap:0.8rem}
-  .input-zone{padding:0.8rem}
-  textarea{font-size:0.75rem;min-height:45px;padding:0.6rem}
-  button{padding:0.5rem 1rem;font-size:0.8rem}
+  .stage{border-right:none;border-bottom:1px solid #e0dcd5;min-height:350px}
 }
 </style>
 </head>
@@ -138,561 +88,618 @@ label.field-label{display:block;font-size:0.8rem;color:#8b7355;margin-bottom:0.3
 
 <header>
 <div class="header-left">
-<h1>Pistol: Three-Stage Training</h1>
-<p class="subtitle">Sentence → Tokens → Patterns → Continuation. Full visibility at every step.</p>
-</div>
-<div class="header-right">
-<button class="help-btn" onclick="openGuide()">? How to Use</button>
+<h1>Pistol: Context + Lemma Learning</h1>
+<p class="subtitle">Learn word lemmas, contexts, and search by base form.</p>
 </div>
 </header>
 
-<div class="workspace" id="workspace">
+<div class="tabs-main">
+<button class="tab-main active" onclick="switchMainTab('train')">Train</button>
+<button class="tab-main" onclick="switchMainTab('search')">Search Lemmas</button>
+</div>
 
-<!-- STAGE 1: TOKENIZE + TRAIN TOKENIZER -->
-<div class="stage" id="stage1" style="flex:1.2">
-<div class="resizer" onmousedown="startResize(event, 'stage1')"></div>
+<!-- TRAIN TAB -->
+<div id="train" class="tab-pane active" style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+<div class="workspace">
+
+<!-- STAGE 1: TEACH LEMMAS -->
+<div class="stage" id="stage1">
 <div class="stage-header">
-<div class="stage-num">Stage 1</div>
-<div class="stage-title">Tokenize</div>
+<div class="stage-num">Stage 1: Lemmatize</div>
+<div class="stage-title">Teach word forms & base forms</div>
 </div>
 <div class="stage-content">
-<div class="tabs-within-stage">
-<button class="tab-link active" onclick="switchStage1Tab('tokenize')">Tokenize Sentence</button>
-<button class="tab-link" onclick="switchStage1Tab('teach')">Teach Tokenizer</button>
+
+<div class="storage-status">
+✓ Persisted | Lemmas: <span id="lemmaCount">0</span> | Contexts: <span id="contextCount">0</span>
 </div>
 
-<!-- TAB: TOKENIZE SENTENCE -->
-<div id="tokenize" class="tab-pane active" style="flex:1;display:flex;flex-direction:column;gap:1rem">
 <div class="guide-box">
-<div class="guide-title">Convert sentences to tokens</div>
-Paste a narrative sentence. The system uses the vocabulary you taught it to break it into tokens.
+<strong>Learn lemmas:</strong> "running" → "run", "saw" → "see", "walks" → "walk". The system pools contexts across all forms of a lemma.
 </div>
+
 <div class="input-zone">
-<h3>Raw Narrative</h3>
-<textarea id="s1Input" placeholder='Try: "Sarah noticed Marcus entering the office"'></textarea>
-<div class="button-row">
-<button onclick="stage1Tokenize()">Tokenize</button>
-<button class="secondary" onclick="stage1Clear()">Clear</button>
+<h3>Teach a Word Form</h3>
+<label style="display:block;font-size:0.8rem;color:#8b7355;margin-bottom:0.3rem;font-weight:600">Surface form (e.g., "running")</label>
+<input type="text" id="surfaceForm" placeholder="e.g., running">
+<label style="display:block;font-size:0.8rem;color:#8b7355;margin-bottom:0.3rem;font-weight:600">Lemma (base form, e.g., "run")</label>
+<input type="text" id="lemmaForm" placeholder="e.g., run">
+<div style="display:flex;gap:0.6rem;flex-wrap:wrap">
+<button onclick="teachLemma()">Add Lemma Pair</button>
 </div>
 </div>
+
+<div class="context-view">
+<div class="label">Learned Lemmas</div>
+<div id="lemmaList">
+<div class="empty-state">No lemmas yet</div>
+</div>
+</div>
+
+</div>
+</div>
+
+<!-- STAGE 2: TEACH CONTEXTS -->
+<div class="stage" id="stage2">
+<div class="stage-header">
+<div class="stage-num">Stage 2: Teach Context</div>
+<div class="stage-title">Label words in sentences</div>
+</div>
+<div class="stage-content">
+
+<div class="guide-box">
+<strong>Sentences:</strong> Paste a sentence, tag words by type. The system learns contexts at the lemma level.
+</div>
+
+<div class="input-zone">
+<h3>Example Sentence</h3>
+<textarea id="teachSentence" placeholder='e.g., "Sarah walked into the office"'></textarea>
+<div style="display:flex;gap:0.6rem;flex-wrap:wrap">
+<button onclick="parseSentence()">Parse</button>
+<button class="secondary" onclick="clearTeach()">Clear</button>
+</div>
+</div>
+
+<div class="input-zone">
+<h3>Click words to tag</h3>
+<div id="sentenceEditor" class="sentence-editor">
+<div class="empty-state">Parse a sentence above</div>
+</div>
+</div>
+
+<div class="input-zone">
+<h3>Type for selected words</h3>
+<select id="typeSelect">
+<option value="">Select type</option>
+<option value="person">Person</option>
+<option value="action">Action</option>
+<option value="location">Location</option>
+<option value="object">Object</option>
+<option value="modifier">Modifier</option>
+</select>
+<div style="display:flex;gap:0.6rem;flex-wrap:wrap;margin-top:0.6rem">
+<button onclick="applyType()">Tag Selected</button>
+<button class="secondary" onclick="learnSentence()">Learn Sentence</button>
+</div>
+</div>
+
+</div>
+</div>
+
+<!-- STAGE 3: TOKENIZE -->
+<div class="stage" id="stage3">
+<div class="stage-header">
+<div class="stage-num">Stage 3: Tokenize</div>
+<div class="stage-title">Test on new sentences</div>
+</div>
+<div class="stage-content">
+
+<div class="guide-box">
+<strong>Classify words</strong> using learned lemma contexts.
+</div>
+
+<div class="input-zone">
+<h3>New Sentence</h3>
+<textarea id="testSentence" placeholder='Try: "Marcus was running"'></textarea>
+<div style="display:flex;gap:0.6rem;flex-wrap:wrap">
+<button onclick="tokenizeTest()">Tokenize</button>
+<button class="secondary" onclick="clearTest()">Clear</button>
+</div>
+</div>
+
 <div class="token-display flex-grow">
-<div class="label">Output: Token Sequence</div>
-<div id="s1Output" class="token-list">
-<div class="empty-state">Tokenize a sentence above</div>
-</div>
-</div>
-</div>
-
-<!-- TAB: TEACH TOKENIZER -->
-<div id="teach" class="tab-pane" style="flex:1;display:flex;flex-direction:column;gap:1rem">
-<div class="guide-box">
-<div class="guide-title">Teach the tokenizer word types</div>
-Define which words should be recognized as which token types. The tokenizer learns from your examples.
-</div>
-
-<div class="input-zone">
-<h3>Create Token Type</h3>
-<label class="field-label">Type name (e.g., "person", "action", "location")</label>
-<input type="text" id="newTypeName" placeholder="e.g., person">
-<label class="field-label">Color</label>
-<input type="color" id="newTypeColor" value="#8b7355">
-<div class="button-row">
-<button onclick="createTokenType()">Create Type</button>
+<div class="label">Predicted Tokens (with lemmas)</div>
+<div id="tokenOutput" class="token-list">
+<div class="empty-state">Tokenize above</div>
 </div>
 </div>
 
-<div class="input-zone">
-<h3>Add Words to Type</h3>
-<label class="field-label">Type</label>
-<select id="addWordType"><option value="">Select type</option></select>
-<label class="field-label">Word</label>
-<input type="text" id="addWord" placeholder="e.g., Sarah">
-<div class="button-row">
-<button onclick="addWordToType()">Add Word</button>
 </div>
 </div>
 
-<div class="input-zone">
-<h3>Teach by Example</h3>
-<label class="field-label">Paste a sentence</label>
-<textarea id="teachSentence" placeholder='e.g., "Sarah noticed Marcus entering the office"' style="min-height:50px"></textarea>
-<div class="button-row">
-<button onclick="splitTeachSentence()">Split into words</button>
-</div>
-<div id="teachingPairs" style="margin-top:1rem"></div>
-</div>
-
-<div class="input-zone">
-<h3>Your Vocabulary</h3>
-<div id="learnedVocab" class="learned-vocab">
-<div class="empty-state">No words learned yet</div>
-</div>
-</div>
-</div>
 </div>
 </div>
 
-<!-- STAGE 2: TOKENS → PATTERNS -->
-<div class="stage" id="stage2" style="flex:1.3">
-<div class="resizer" onmousedown="startResize(event, 'stage2')"></div>
+<!-- SEARCH TAB -->
+<div id="search" class="tab-pane" style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+<div class="workspace">
+
+<div class="stage">
 <div class="stage-header">
-<div class="stage-num">Stage 2</div>
-<div class="stage-title">Learn Patterns</div>
+<div class="stage-num">Lemma Search Engine</div>
+<div class="stage-title">Find by base form</div>
 </div>
 <div class="stage-content">
-<div class="guide-box">
-<div class="guide-title">Teach relationships between tokens</div>
-Pick two tokens from Stage 1. Say what their relationship is. The system learns and generalizes.
-</div>
+
 <div class="input-zone">
-<h3>Teach Relationship</h3>
-<label class="field-label">From token</label>
-<select id="s2From"><option value="">Select token</option></select>
-<label class="field-label">To token</label>
-<select id="s2To"><option value="">Select token</option></select>
-<label class="field-label">Relationship label</label>
-<input type="text" id="s2Label" placeholder="e.g., 'enter', 'notice', 'observe'">
-<label class="field-label">Confidence: <span id="s2ConfVal">0.70</span></label>
-<input type="range" id="s2Conf" min="0" max="1" step="0.01" value="0.7" oninput="document.getElementById('s2ConfVal').textContent=(parseFloat(this.value).toFixed(2))">
-<div id="s2CatalystUI" style="margin-top:0.8rem;font-size:0.8rem"></div>
-<div class="button-row" style="margin-top:0.8rem">
-<button onclick="stage2Learn()">Learn This</button>
-<button class="secondary" onclick="stage2Suggest()">Suggest</button>
+<h3>Search by Lemma</h3>
+<input type="text" id="searchInput" placeholder="e.g., walk, see, run" onkeyup="performSearch()">
 </div>
-</div>
-<div class="pattern-viewer flex-grow">
-<div class="label">Patterns You've Taught</div>
-<div id="s2Patterns">
-<div class="empty-state">Nothing learned yet. Teach above.</div>
-</div>
-</div>
+
+<div class="context-view">
+<div class="label">Results</div>
+<div id="searchResults">
+<div class="empty-state">Search above</div>
 </div>
 </div>
 
-<!-- STAGE 3: PROMPT → CONTINUATION -->
-<div class="stage" id="stage3" style="flex:1.5">
+</div>
+</div>
+
+<div class="stage" style="flex:1.5">
 <div class="stage-header">
-<div class="stage-num">Stage 3</div>
-<div class="stage-title">Continue Story</div>
+<div class="stage-num">Lemma Details</div>
+<div class="stage-title">Browse family & contexts</div>
 </div>
 <div class="stage-content">
-<div class="guide-box">
-<div class="guide-title">Generate story continuation</div>
-Type a prompt. The system shows which patterns matched and generates what comes next.
+
+<div id="lemmaDetails">
+<div class="empty-state">Select a lemma</div>
 </div>
-<div class="input-zone">
-<h3>Story Prompt</h3>
-<textarea id="s3Input" placeholder='Try: "Marcus walked into the office"'></textarea>
-<div class="button-row">
-<button onclick="stage3Continue()">Generate</button>
-<button class="secondary" onclick="stage3Clear()">Clear</button>
-</div>
-</div>
-<div style="display:grid;grid-template-rows:1fr 1fr;gap:1rem;flex:1;min-height:0">
-<div class="activation-graph">
-<div class="label">Which patterns matched?</div>
-<div id="s3Activation">
-<div class="empty-state">Generate above to see the reasoning</div>
-</div>
-</div>
-<div class="output-box">
-<label class="output-label">Generated Continuation</label>
-<div id="s3Output" class="output-prose">
-<div class="empty-state">Continuation will appear here</div>
-</div>
-</div>
-</div>
+
 </div>
 </div>
 
 </div>
-
-<!-- HELP MODAL -->
-<div id="guideModal" class="modal" style="display:none;position:fixed;inset:0;background:rgba(44,44,44,0.5);z-index:1000;align-items:center;justify-content:center;padding:1rem">
-<div style="background:#fff;padding:2rem;border-radius:2px;max-width:700px;width:100%;max-height:85vh;overflow-y:auto">
-<span style="float:right;cursor:pointer;font-size:1.3rem;color:#999;font-weight:700;margin-bottom:1rem" onclick="closeGuide()">&times;</span>
-<h2 style="font-size:1.3rem;font-weight:400;margin-bottom:1.2rem">How to Use Pistol</h2>
-
-<h3 style="font-size:1rem;font-weight:400;margin-top:1.5rem;margin-bottom:0.8rem;color:#8b7355">Complete Workflow</h3>
-<ol style="margin-left:1.5rem;margin-bottom:1rem">
-<li style="margin-bottom:0.5rem;line-height:1.6"><strong>Stage 1 - Teach Tokenizer Tab:</strong> Create token types ("person", "action", "location"). Add words to each type, or paste sentences and label words.</li>
-<li style="margin-bottom:0.5rem;line-height:1.6"><strong>Stage 1 - Tokenize Sentence Tab:</strong> Paste a sentence. Click Tokenize. The system uses your vocabulary to break it into tokens.</li>
-<li style="margin-bottom:0.5rem;line-height:1.6"><strong>Stage 2:</strong> Pick two tokens. Say their relationship. Click Learn. Teach the same relationship multiple times to raise confidence.</li>
-<li style="margin-bottom:0.5rem;line-height:1.6"><strong>Stage 3:</strong> Type a prompt. Click Generate. See which patterns fired and the generated continuation.</li>
-</ol>
-
-<h3 style="font-size:1rem;font-weight:400;margin-top:1.5rem;margin-bottom:0.8rem;color:#8b7355">Stage 1: Teach Tokenizer</h3>
-<p style="font-size:0.95rem;line-height:1.7;margin-bottom:0.8rem;color:#2c2c2c">The tokenizer needs to learn which words are which types. Two methods:</p>
-<p style="font-size:0.95rem;line-height:1.7;margin-bottom:0.8rem;color:#2c2c2c"><strong>Method 1: Manual</strong> Create a type ("person"), then add words one at a time ("Sarah", "Marcus").</p>
-<p style="font-size:0.95rem;line-height:1.7;margin-bottom:0.8rem;color:#2c2c2c"><strong>Method 2: Teach by Example</strong> Paste a sentence, click "Split into words", label each word with its type, click "Learn these words".</p>
-
-<h3 style="font-size:1rem;font-weight:400;margin-top:1.5rem;margin-bottom:0.8rem;color:#8b7355">Pro Tips</h3>
-<ul style="margin-left:1.5rem;margin-bottom:1rem">
-<li style="margin-bottom:0.5rem;line-height:1.6">Build your tokenizer vocabulary first (Stage 1, Teach tab) before you tokenize sentences.</li>
-<li style="margin-bottom:0.5rem;line-height:1.6">Teach relationships (Stage 2) multiple times to raise confidence. Example: teach "person → location = enter" from 3 different sentences.</li>
-<li style="margin-bottom:0.5rem;line-height:1.6">If generation fails, check Stage 3's "Which patterns matched?" to see if a pattern is missing. Go back to Stage 2 and teach it.</li>
-</ul>
 </div>
+
 </div>
 
 <script>
-// Pattern Memory Class
-class PatternMemory {
+// ===== LEMMATIZER =====
+class Lemmatizer {
   constructor() {
-    this.patterns = new Map();
-    this.concretePatterns = new Map();
+    this.lemmas = new Map(); // lemma -> Set of surface forms
+    this.forms = new Map();  // surface form -> lemma
   }
 
-  learn(fromVal, toVal, fromType, toType, label, baseConf, catalysts, sentenceIndex) {
-    const typeKey = `${fromType}->${toType}`;
-    const concreteKey = `${fromVal}->${toVal}`;
-
-    if (!this.patterns.has(typeKey)) {
-      this.patterns.set(typeKey, {
-        label,
-        confidence: baseConf,
-        count: 1,
-        catalysts: catalysts.map(c => ({ ...c })),
-        sources: [sentenceIndex],
-        divergence: 0
-      });
-    } else {
-      const p = this.patterns.get(typeKey);
-      const oldConf = p.confidence;
-      p.count++;
-      p.confidence = (oldConf * (p.count - 1) + baseConf) / p.count;
-      p.sources.push(sentenceIndex);
-      p.divergence = Math.abs(baseConf - p.confidence);
+  teach(surfaceForm, lemma) {
+    const sf = surfaceForm.toLowerCase();
+    const l = lemma.toLowerCase();
+    
+    if (!this.lemmas.has(l)) {
+      this.lemmas.set(l, new Set());
     }
-
-    if (!this.concretePatterns.has(concreteKey)) {
-      this.concretePatterns.set(concreteKey, {
-        label,
-        confidence: baseConf,
-        count: 1,
-        fromType,
-        toType,
-        sources: [sentenceIndex]
-      });
-    } else {
-      const cp = this.concretePatterns.get(concreteKey);
-      cp.count++;
-      cp.confidence = (cp.confidence * (cp.count - 1) + baseConf) / cp.count;
-      cp.sources.push(sentenceIndex);
-    }
+    this.lemmas.get(l).add(sf);
+    this.forms.set(sf, l);
   }
 
-  getGeneralizedPatterns() {
-    return Array.from(this.patterns.entries()).map(([key, pat]) => ({ key, ...pat }));
+  getLemma(word) {
+    const lower = word.toLowerCase();
+    if (this.forms.has(lower)) {
+      return this.forms.get(lower);
+    }
+    
+    // Heuristic fallback: try common suffixes
+    if (lower.endsWith('ing')) return lower.slice(0, -3);
+    if (lower.endsWith('ed')) return lower.slice(0, -2);
+    if (lower.endsWith('s') && !lower.endsWith('ss')) return lower.slice(0, -1);
+    
+    return lower; // assume it's already a lemma
   }
 
-  predict(fromVal, toVal, fromType, toType) {
-    const typeKey = `${fromType}->${toType}`;
-    const concreteKey = `${fromVal}->${toVal}`;
+  getAllLemmas() {
+    return Array.from(this.lemmas.entries()).map(([lemma, forms]) => ({
+      lemma,
+      forms: Array.from(forms)
+    }));
+  }
 
-    if (this.concretePatterns.has(concreteKey)) {
-      return { ...this.concretePatterns.get(concreteKey), source: 'concrete' };
-    }
-    if (this.patterns.has(typeKey)) {
-      const p = this.patterns.get(typeKey);
-      return { label: p.label, confidence: p.confidence * 0.8, catalysts: p.catalysts, source: 'generalized', sources: p.sources };
-    }
-    return null;
+  getForms(lemma) {
+    return Array.from(this.lemmas.get(lemma) || new Set());
   }
 }
 
-// State
-let tokenTypes = new Map();
-let vocabulary = new Map();
-let patterns = new PatternMemory();
-let sentenceIndex = 0;
-let currentTokens = [];
+// ===== CONTEXT TOKENIZER WITH LEMMAS =====
+class ContextTokenizer {
+  constructor(lemmatizer) {
+    this.lemmatizer = lemmatizer;
+    // lemma -> Map<type -> Array<contexts>>
+    this.lemmaContexts = new Map();
+    this.sentenceCount = 0;
+  }
 
-// Stage 1 tabs
-function switchStage1Tab(tabName) {
-  document.querySelectorAll('#stage1 .tab-pane').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('#stage1 .tab-link').forEach(el => el.classList.remove('active'));
-  document.getElementById(tabName).classList.add('active');
+  learnSentence(tokens) {
+    // tokens = [{value, type}, ...]
+    this.sentenceCount++;
+    
+    tokens.forEach((token, idx) => {
+      if (!token.type) return;
+      
+      // Get lemma for this token
+      const lemma = this.lemmatizer.getLemma(token.value);
+      
+      // Build context using lemmas of neighbors
+      const before = tokens
+        .slice(Math.max(0, idx - 2), idx)
+        .map(t => this.lemmatizer.getLemma(t.value) + '/' + (t.type || 'unk'));
+      const after = tokens
+        .slice(idx + 1, Math.min(tokens.length, idx + 3))
+        .map(t => this.lemmatizer.getLemma(t.value) + '/' + (t.type || 'unk'));
+      
+      const context = { before, after };
+      
+      if (!this.lemmaContexts.has(lemma)) {
+        this.lemmaContexts.set(lemma, new Map());
+      }
+      const typeMap = this.lemmaContexts.get(lemma);
+      if (!typeMap.has(token.type)) {
+        typeMap.set(token.type, []);
+      }
+      typeMap.get(token.type).push(context);
+    });
+  }
+
+  classifyWord(word, neighborLemmas) {
+    const lemma = this.lemmatizer.getLemma(word);
+    const scores = new Map();
+    
+    if (this.lemmaContexts.has(lemma)) {
+      const typeMap = this.lemmaContexts.get(lemma);
+      typeMap.forEach((contexts, type) => {
+        let score = 0;
+        contexts.forEach(ctx => {
+          let matches = 0;
+          neighborLemmas.before.forEach((nl, i) => {
+            if (ctx.before[i] === nl) matches++;
+          });
+          neighborLemmas.after.forEach((nl, i) => {
+            if (ctx.after[i] === nl) matches++;
+          });
+          score += matches / (neighborLemmas.before.length + neighborLemmas.after.length + 1);
+        });
+        scores.set(type, score / contexts.length);
+      });
+    }
+    
+    if (scores.size === 0) return { type: 'unknown', confidence: 0 };
+    
+    let best = { type: 'unknown', confidence: 0 };
+    scores.forEach((score, type) => {
+      if (score > best.confidence) {
+        best = { type, confidence: score };
+      }
+    });
+    return best;
+  }
+
+  getStats() {
+    let totalContexts = 0;
+    this.lemmaContexts.forEach(typeMap => {
+      typeMap.forEach(contexts => {
+        totalContexts += contexts.length;
+      });
+    });
+    return { sentences: this.sentenceCount, contexts: totalContexts };
+  }
+}
+
+// ===== STORAGE =====
+let db, lemmatizer, tokenizer;
+
+async function initDB() {
+  return new Promise((resolve) => {
+    const req = indexedDB.open('PistolLemmaDB', 1);
+    req.onerror = () => resolve();
+    req.onsuccess = () => {
+      db = req.result;
+      loadAll();
+      resolve();
+    };
+    req.onupgradeneeded = (e) => {
+      e.target.result.createObjectStore('lemmatizer', { keyPath: 'key' });
+      e.target.result.createObjectStore('tokenizer', { keyPath: 'key' });
+    };
+  });
+}
+
+async function saveAll() {
+  if (!db) return;
+  
+  const lemData = {
+    key: 'lemmatizer',
+    lemmas: Array.from(lemmatizer.lemmas.entries()),
+    forms: Array.from(lemmatizer.forms.entries())
+  };
+  
+  const tokData = {
+    key: 'tokenizer',
+    lemmaContexts: Array.from(tokenizer.lemmaContexts.entries()).map(([lemma, typeMap]) => ({
+      lemma,
+      types: Array.from(typeMap.entries()).map(([type, contexts]) => ({ type, contexts }))
+    })),
+    sentenceCount: tokenizer.sentenceCount
+  };
+  
+  return new Promise((resolve) => {
+    const tx = db.transaction(['lemmatizer', 'tokenizer'], 'readwrite');
+    tx.objectStore('lemmatizer').put(lemData);
+    tx.objectStore('tokenizer').put(tokData);
+    tx.oncomplete = () => {
+      updateStats();
+      resolve();
+    };
+  });
+}
+
+async function loadAll() {
+  if (!db) return;
+  
+  lemmatizer = new Lemmatizer();
+  tokenizer = new ContextTokenizer(lemmatizer);
+  
+  return new Promise((resolve) => {
+    const tx = db.transaction(['lemmatizer', 'tokenizer'], 'readonly');
+    
+    const lemReq = tx.objectStore('lemmatizer').get('lemmatizer');
+    lemReq.onsuccess = () => {
+      if (lemReq.result) {
+        lemmatizer.lemmas = new Map(lemReq.result.lemmas);
+        lemmatizer.forms = new Map(lemReq.result.forms);
+      }
+    };
+    
+    const tokReq = tx.objectStore('tokenizer').get('tokenizer');
+    tokReq.onsuccess = () => {
+      if (tokReq.result) {
+        const data = tokReq.result;
+        data.lemmaContexts.forEach(({ lemma, types }) => {
+          const typeMap = new Map();
+          types.forEach(({ type, contexts }) => {
+            typeMap.set(type, contexts);
+          });
+          tokenizer.lemmaContexts.set(lemma, typeMap);
+        });
+        tokenizer.sentenceCount = data.sentenceCount || 0;
+      }
+      updateStats();
+      renderLemmaList();
+      resolve();
+    };
+  });
+}
+
+// ===== UI STATE =====
+let currentTokens = [];
+let selectedWordIndices = new Set();
+
+function switchMainTab(tab) {
+  document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-main').forEach(el => el.classList.remove('active'));
+  document.getElementById(tab).classList.add('active');
   event.target.classList.add('active');
 }
 
-// Tokenizer Training
-function createTokenType() {
-  const name = document.getElementById('newTypeName').value.trim();
-  const color = document.getElementById('newTypeColor').value;
-  if (!name) return alert('Enter type name');
-  if (tokenTypes.has(name)) return alert('Type already exists');
-  tokenTypes.set(name, { color, words: new Set() });
-  document.getElementById('newTypeName').value = '';
-  populateTypeSelects();
-  renderVocabulary();
+function teachLemma() {
+  const sf = document.getElementById('surfaceForm').value.trim().toLowerCase();
+  const l = document.getElementById('lemmaForm').value.trim().toLowerCase();
+  if (!sf || !l) return alert('Enter both forms');
+  
+  lemmatizer.teach(sf, l);
+  saveAll();
+  
+  document.getElementById('surfaceForm').value = '';
+  document.getElementById('lemmaForm').value = '';
+  renderLemmaList();
 }
 
-function addWordToType() {
-  const typeName = document.getElementById('addWordType').value;
-  const word = document.getElementById('addWord').value.trim();
-  if (!typeName || !word) return alert('Select type and enter word');
-  if (!tokenTypes.has(typeName)) return alert('Type not found');
-  tokenTypes.get(typeName).words.add(word);
-  vocabulary.set(word.toLowerCase(), typeName);
-  document.getElementById('addWord').value = '';
-  renderVocabulary();
-}
-
-function splitTeachSentence() {
-  const sentence = document.getElementById('teachSentence').value.trim();
-  if (!sentence) return alert('Paste a sentence');
-  const words = sentence.split(/\s+/);
-  const html = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.6rem">` +
-    words.map(w => `
-      <div class="training-pair">
-        <div>
-          <div class="label">Word</div>
-          <input type="text" readonly value="${w}">
-        </div>
-        <div>
-          <div class="label">Type</div>
-          <select class="word-type-select" data-word="${w}">
-            <option value="">Select type</option>
-            ${Array.from(tokenTypes.keys()).map(t => `<option value="${t}">${t}</option>`).join('')}
-          </select>
-        </div>
+function renderLemmaList() {
+  const container = document.getElementById('lemmaList');
+  const lemmas = lemmatizer.getAllLemmas();
+  if (lemmas.length === 0) {
+    container.innerHTML = '<div class="empty-state">No lemmas yet</div>';
+    return;
+  }
+  
+  container.innerHTML = lemmas.map(({ lemma, forms }) => `
+    <div class="lemma-family">
+      <div class="lemma-header">${lemma}</div>
+      <div class="form-list">
+        ${forms.map(f => `<span class="form-badge">${f}</span>`).join('')}
       </div>
-    `).join('') + `</div>
-    <div class="button-row" style="margin-top:1rem">
-      <button onclick="learnTeachPairs()">Learn these words</button>
-    </div>`;
-  document.getElementById('teachingPairs').innerHTML = html;
+    </div>
+  `).join('');
 }
 
-function learnTeachPairs() {
-  document.querySelectorAll('.word-type-select').forEach(sel => {
-    const word = sel.dataset.word;
-    const type = sel.value;
-    if (type) {
-      tokenTypes.get(type).words.add(word);
-      vocabulary.set(word.toLowerCase(), type);
+function parseSentence() {
+  const text = document.getElementById('teachSentence').value.trim();
+  if (!text) return alert('Paste a sentence');
+  
+  const words = text.split(/\s+/);
+  currentTokens = words.map(w => ({ value: w, type: null }));
+  selectedWordIndices.clear();
+  
+  renderSentenceEditor();
+}
+
+function renderSentenceEditor() {
+  const editor = document.getElementById('sentenceEditor');
+  editor.innerHTML = currentTokens.map((token, idx) => `
+    <span class="word-token ${selectedWordIndices.has(idx) ? 'selected' : ''} ${token.type ? 'tagged' : ''}"
+          onclick="toggleWordSelection(${idx})"
+          style="${token.type ? `border-color:#8b7355; background:#f0e8e0; color:#2c2c2c; border-width:2px` : ''}">
+      ${token.value}
+      ${token.type ? `<small style="color:#8b7355;font-weight:600"> (${token.type})</small>` : ''}
+    </span>
+  `).join('');
+}
+
+function toggleWordSelection(idx) {
+  if (selectedWordIndices.has(idx)) {
+    selectedWordIndices.delete(idx);
+  } else {
+    selectedWordIndices.add(idx);
+  }
+  renderSentenceEditor();
+}
+
+function applyType() {
+  const type = document.getElementById('typeSelect').value;
+  if (!type || selectedWordIndices.size === 0) return alert('Select type and words');
+  
+  selectedWordIndices.forEach(idx => {
+    currentTokens[idx].type = type;
+  });
+  
+  renderSentenceEditor();
+  document.getElementById('typeSelect').value = '';
+}
+
+function learnSentence() {
+  if (currentTokens.filter(t => t.type).length === 0) return alert('Tag at least one word');
+  
+  tokenizer.learnSentence(currentTokens);
+  saveAll();
+  
+  document.getElementById('teachSentence').value = '';
+  currentTokens = [];
+  selectedWordIndices.clear();
+  document.getElementById('sentenceEditor').innerHTML = '<div class="empty-state">Parse a sentence above</div>';
+}
+
+function tokenizeTest() {
+  const text = document.getElementById('testSentence').value.trim();
+  if (!text) return alert('Paste a sentence');
+  
+  const words = text.split(/\s+/);
+  const tokens = [];
+  
+  words.forEach((word, idx) => {
+    const before = words.slice(Math.max(0, idx - 2), idx).map(w => {
+      const l = lemmatizer.getLemma(w);
+      // Try to find type from learned contexts
+      if (tokenizer.lemmaContexts.has(l)) {
+        const types = Array.from(tokenizer.lemmaContexts.get(l).keys());
+        return l + '/' + (types[0] || 'unk');
+      }
+      return l + '/unk';
+    });
+    const after = words.slice(idx + 1, Math.min(words.length, idx + 3)).map(w => {
+      const l = lemmatizer.getLemma(w);
+      if (tokenizer.lemmaContexts.has(l)) {
+        const types = Array.from(tokenizer.lemmaContexts.get(l).keys());
+        return l + '/' + (types[0] || 'unk');
+      }
+      return l + '/unk';
+    });
+    
+    const classified = tokenizer.classifyWord(word, { before, after });
+    const lemma = lemmatizer.getLemma(word);
+    
+    tokens.push({ word, ...classified, lemma });
+  });
+  
+  renderTokenOutput(tokens);
+}
+
+function renderTokenOutput(tokens) {
+  const output = document.getElementById('tokenOutput');
+  output.innerHTML = tokens.map(t => `
+    <div class="token">
+      <span class="value">${t.word}</span>
+      <span class="type">${t.type}</span>
+      <span class="conf">${t.confidence.toFixed(2)}</span>
+      <span style="color:#8b8b7f;font-size:0.65rem">→ ${t.lemma}</span>
+    </div>
+  `).join('');
+}
+
+function clearTeach() {
+  document.getElementById('teachSentence').value = '';
+  currentTokens = [];
+  selectedWordIndices.clear();
+  document.getElementById('sentenceEditor').innerHTML = '<div class="empty-state">Parse above</div>';
+}
+
+function clearTest() {
+  document.getElementById('testSentence').value = '';
+  document.getElementById('tokenOutput').innerHTML = '<div class="empty-state">Tokenize above</div>';
+}
+
+// ===== SEARCH =====
+function performSearch() {
+  const query = document.getElementById('searchInput').value.trim().toLowerCase();
+  if (!query) {
+    document.getElementById('searchResults').innerHTML = '<div class="empty-state">Search above</div>';
+    return;
+  }
+  
+  const results = [];
+  lemmatizer.getAllLemmas().forEach(({ lemma, forms }) => {
+    if (lemma.includes(query) || forms.some(f => f.includes(query))) {
+      results.push({ lemma, forms });
     }
   });
-  document.getElementById('teachingPairs').innerHTML = '';
-  document.getElementById('teachSentence').value = '';
-  renderVocabulary();
-}
-
-function renderVocabulary() {
-  const container = document.getElementById('learnedVocab');
-  if (vocabulary.size === 0) {
-    container.innerHTML = '<div class="empty-state">No words learned yet</div>';
+  
+  const container = document.getElementById('searchResults');
+  if (results.length === 0) {
+    container.innerHTML = '<div class="empty-state">No matches</div>';
     return;
   }
-  const sorted = Array.from(vocabulary.entries()).sort();
-  container.innerHTML = sorted.map(([word, type]) => {
-    const color = tokenTypes.get(type)?.color || '#999';
-    return `<div class="vocab-item">
-      <div class="color-dot" style="background:${color}"></div>
-      <span style="font-family:monospace;font-weight:600">${word}</span>
-      <span style="color:#999">→ ${type}</span>
-    </div>`;
-  }).join('');
-}
-
-function populateTypeSelects() {
-  const options = '<option value="">Select type</option>' + Array.from(tokenTypes.keys()).map(t => `<option value="${t}">${t}</option>`).join('');
-  document.getElementById('addWordType').innerHTML = options;
-}
-
-// Stage 1 Tokenize
-function stage1Tokenize() {
-  const text = document.getElementById('s1Input').value.trim();
-  if (!text) return alert('Paste a sentence');
-  const words = text.split(/\s+/);
-  currentTokens = words.map(word => {
-    const lcWord = word.toLowerCase();
-    const type = vocabulary.has(lcWord) ? vocabulary.get(lcWord) : 'entity';
-    return { value: word, type };
-  });
-
-  const output = document.getElementById('s1Output');
-  output.innerHTML = currentTokens.map(t => {
-    const color = tokenTypes.get(t.type)?.color || '#999';
-    return `<div class="token" style="border-color:${color}"><span class="value">${t.value}</span><span class="type" style="color:${color}">${t.type}</span></div>`;
-  }).join('');
-
-  const fromSel = document.getElementById('s2From');
-  const toSel = document.getElementById('s2To');
-  fromSel.innerHTML = '<option value="">Select token</option>' + 
-    currentTokens.map((t, i) => `<option value="${i}">${t.value}</option>`).join('');
-  toSel.innerHTML = '<option value="">Select token</option>' + 
-    currentTokens.map((t, i) => `<option value="${i}">${t.value}</option>`).join('');
-  renderCatalystUI();
-}
-
-function stage1Clear() {
-  document.getElementById('s1Input').value = '';
-  document.getElementById('s1Output').innerHTML = '<div class="empty-state">Tokenize a sentence above</div>';
-  currentTokens = [];
-}
-
-function renderCatalystUI() {
-  const ui = document.getElementById('s2CatalystUI');
-  if (currentTokens.length === 0) {
-    ui.innerHTML = '<div class="empty-state" style="padding:0.8rem">Tokenize a sentence first</div>';
-    return;
-  }
-  ui.innerHTML = `<div style="color:#999;margin-bottom:0.6rem"><strong>Catalysts?</strong> (optional)</div>` +
-    currentTokens.map((t, i) => `
-      <label style="display:block;margin-bottom:0.3rem;cursor:pointer;font-size:0.8rem">
-        <input type="checkbox" class="catalyst-check" data-idx="${i}" data-val="${t.value}" data-type="${t.type}">
-        ${t.value} <span style="color:#999;font-size:0.75rem">(${t.type})</span>
-      </label>
-    `).join('');
-}
-
-// Stage 2
-function stage2Learn() {
-  const fromIdx = parseInt(document.getElementById('s2From').value);
-  const toIdx = parseInt(document.getElementById('s2To').value);
-  const label = document.getElementById('s2Label').value.trim();
-  const conf = parseFloat(document.getElementById('s2Conf').value);
-
-  if (isNaN(fromIdx) || isNaN(toIdx) || !label) return alert('Fill in From, To, and Label');
-  if (fromIdx === toIdx) return alert('From and To must differ');
-
-  const fromToken = currentTokens[fromIdx];
-  const toToken = currentTokens[toIdx];
-  const catalysts = Array.from(document.querySelectorAll('.catalyst-check:checked')).map(el => ({
-    value: el.dataset.val,
-    type: el.dataset.type,
-    strength: 0.7
-  }));
-
-  patterns.learn(fromToken.value, toToken.value, fromToken.type, toToken.type, label, conf, catalysts, sentenceIndex);
-  sentenceIndex++;
-
-  renderPatterns();
-  document.getElementById('s2Label').value = '';
-  document.getElementById('s2From').value = '';
-  document.getElementById('s2To').value = '';
-  document.querySelectorAll('.catalyst-check').forEach(el => el.checked = false);
-}
-
-function stage2Suggest() {
-  const fromIdx = parseInt(document.getElementById('s2From').value);
-  const toIdx = parseInt(document.getElementById('s2To').value);
-  if (isNaN(fromIdx) || isNaN(toIdx)) return alert('Select From and To');
-
-  const fromToken = currentTokens[fromIdx];
-  const toToken = currentTokens[toIdx];
-  const pred = patterns.predict(fromToken.value, toToken.value, fromToken.type, toToken.type);
-  if (!pred) return alert('No pattern learned yet');
-
-  document.getElementById('s2Label').value = pred.label;
-  document.getElementById('s2Conf').value = pred.confidence.toFixed(2);
-  document.getElementById('s2ConfVal').textContent = pred.confidence.toFixed(2);
-}
-
-function renderPatterns() {
-  const container = document.getElementById('s2Patterns');
-  const pats = patterns.getGeneralizedPatterns();
-  if (pats.length === 0) {
-    container.innerHTML = '<div class="empty-state">Nothing learned yet</div>';
-    return;
-  }
-  container.innerHTML = pats.map(p => `
-    <div class="pattern-item">
-      <div class="pattern-header">
-        <span class="pattern-from-to">${p.key}</span>
-        <span class="pattern-conf">${p.confidence.toFixed(2)}</span>
-      </div>
-      <div class="pattern-label">"${p.label}"</div>
-      <div class="pattern-catalysts">Catalysts: ${p.catalysts.length ? p.catalysts.map(c => `${c.value}(${c.strength.toFixed(2)})`).join(', ') : 'none'}</div>
-      <div class="pattern-sources">
-        <strong>Sources:</strong> ${p.sources.map((s, i) => `<span class="source-link">S${s}</span>`).join(' ')}
-      </div>
+  
+  container.innerHTML = results.map(({ lemma, forms }) => `
+    <div class="search-result" onclick="showLemmaDetails('${lemma}')">
+      <div class="result-lemma">${lemma}</div>
+      <div class="result-forms">${forms.join(', ')}</div>
+      ${tokenizer.lemmaContexts.has(lemma) ? `<div class="result-contexts">${tokenizer.lemmaContexts.get(lemma).size} contexts learned</div>` : ''}
     </div>
   `).join('');
 }
 
-// Stage 3
-function stage3Continue() {
-  const prompt = document.getElementById('s3Input').value.trim();
-  if (!prompt) return alert('Type a prompt');
-
-  const words = prompt.split(/\s+/);
-  const promptTokens = words.map(word => {
-    const lcWord = word.toLowerCase();
-    const type = vocabulary.has(lcWord) ? vocabulary.get(lcWord) : 'entity';
-    return { value: word, type };
-  });
-
-  let activatedRels = [];
-  for (let i = 0; i < promptTokens.length - 1; i++) {
-    const from = promptTokens[i];
-    const to = promptTokens[i + 1];
-    const pred = patterns.predict(from.value, to.value, from.type, to.type);
-    if (pred) activatedRels.push({ from, to, pred });
+function showLemmaDetails(lemma) {
+  const forms = lemmatizer.getForms(lemma);
+  const contexts = tokenizer.lemmaContexts.get(lemma);
+  
+  let html = `
+    <div class="lemma-family">
+      <div class="lemma-header">${lemma}</div>
+      <div class="form-list">
+        ${forms.map(f => `<span class="form-badge">${f}</span>`).join('')}
+      </div>
+  `;
+  
+  if (contexts && contexts.size > 0) {
+    html += `<div style="margin-top:1rem"><strong style="color:#8b7355">Learned Types:</strong>`;
+    contexts.forEach((ctxList, type) => {
+      html += `<div style="font-size:0.8rem;margin-top:0.3rem"><span style="color:#8b7355">${type}</span> (${ctxList.length} examples)</div>`;
+    });
+    html += `</div>`;
+  } else {
+    html += `<div style="margin-top:1rem;color:#999;font-size:0.8rem">No type contexts learned for this lemma yet</div>`;
   }
-
-  const activation = document.getElementById('s3Activation');
-  if (activatedRels.length === 0) {
-    activation.innerHTML = '<div class="empty-state">No patterns learned for this sequence. Go to Stage 2 and teach it!</div>';
-    document.getElementById('s3Output').innerHTML = '<div class="empty-state">No patterns</div>';
-    return;
-  }
-
-  activation.innerHTML = activatedRels.map(rel => `
-    <div class="activation-node active">
-      <div class="node-relation">${rel.from.value} → ${rel.to.value}</div>
-      <div class="node-conf">"${rel.pred.label}" | conf: ${rel.pred.confidence.toFixed(2)}</div>
-      <div class="node-catalysts">via: ${rel.pred.source}</div>
-    </div>
-  `).join('');
-
-  document.getElementById('s3Output').innerHTML = `<div style="color:#2c2c2c">Sarah was already there, watching. The tension crackled between them.</div>`;
+  
+  html += `</div>`;
+  document.getElementById('lemmaDetails').innerHTML = html;
 }
 
-function stage3Clear() {
-  document.getElementById('s3Input').value = '';
-  document.getElementById('s3Activation').innerHTML = '<div class="empty-state">Generate above</div>';
-  document.getElementById('s3Output').innerHTML = '<div class="empty-state">Continuation will appear here</div>';
+function updateStats() {
+  document.getElementById('lemmaCount').textContent = lemmatizer.lemmas.size;
+  const stats = tokenizer.getStats();
+  document.getElementById('contextCount').textContent = stats.contexts;
 }
 
-// Resizing
-let resizingStage = null;
-let startX = 0;
-let startWidth = 0;
-
-function startResize(e, stageName) {
-  resizingStage = stageName;
-  startX = e.clientX;
-  startWidth = document.getElementById(stageName).offsetWidth;
-  document.addEventListener('mousemove', resize);
-  document.addEventListener('mouseup', stopResize);
-  e.preventDefault();
-}
-
-function resize(e) {
-  if (!resizingStage) return;
-  const delta = e.clientX - startX;
-  const stage = document.getElementById(resizingStage);
-  const newWidth = startWidth + delta;
-  if (newWidth > 300) stage.style.flex = `0 0 ${newWidth}px`;
-}
-
-function stopResize() {
-  resizingStage = null;
-  document.removeEventListener('mousemove', resize);
-  document.removeEventListener('mouseup', stopResize);
-}
-
-// Guide
-function openGuide() {
-  document.getElementById('guideModal').style.display = 'flex';
-}
-
-function closeGuide() {
-  document.getElementById('guideModal').style.display = 'none';
-}
+// Init
+initDB();
 </script>
 
 </body>
