@@ -386,6 +386,7 @@ button:active { background: #1f5ba0; }
           <div class="section-title">Add Lemma Pair</div>
           <input type="text" id="surfaceForm" placeholder="Surface form (e.g., running)">
           <input type="text" id="lemmaForm" placeholder="Lemma (e.g., run)">
+          <input type="text" id="formLabel" placeholder="Grammatical form (e.g., present continuous)">
           <button onclick="teachLemma()">Add Pair</button>
         </div>
 
@@ -512,11 +513,12 @@ button:active { background: #1f5ba0; }
 // ===== LEMMATIZER =====
 class Lemmatizer {
   constructor() {
-    this.lemmas = new Map();
-    this.forms = new Map();
+    this.lemmas = new Map();     // lemma -> Set of surface forms
+    this.forms = new Map();      // surface form -> lemma
+    this.formLabels = new Map(); // surface form -> grammatical form label (e.g. "present continuous")
   }
 
-  teach(surfaceForm, lemma) {
+  teach(surfaceForm, lemma, formLabel) {
     const sf = surfaceForm.toLowerCase();
     const l = lemma.toLowerCase();
     if (!this.lemmas.has(l)) {
@@ -524,6 +526,9 @@ class Lemmatizer {
     }
     this.lemmas.get(l).add(sf);
     this.forms.set(sf, l);
+    if (formLabel && formLabel.trim()) {
+      this.formLabels.set(sf, formLabel.trim());
+    }
   }
 
   getLemma(word) {
@@ -537,15 +542,22 @@ class Lemmatizer {
     return lower;
   }
 
+  getFormLabel(surfaceForm) {
+    return this.formLabels.get(surfaceForm.toLowerCase()) || null;
+  }
+
   getAllLemmas() {
     return Array.from(this.lemmas.entries()).map(([lemma, forms]) => ({
       lemma,
-      forms: Array.from(forms)
+      forms: Array.from(forms).map(f => ({ surface: f, form: this.formLabels.get(f) || null }))
     }));
   }
 
   getForms(lemma) {
-    return Array.from(this.lemmas.get(lemma) || new Set());
+    return Array.from(this.lemmas.get(lemma) || new Set()).map(f => ({
+      surface: f,
+      form: this.formLabels.get(f) || null
+    }));
   }
 }
 
@@ -648,7 +660,8 @@ async function saveAll() {
   const lemData = {
     key: 'lemmatizer',
     lemmas: Array.from(lemmatizer.lemmas.entries()),
-    forms: Array.from(lemmatizer.forms.entries())
+    forms: Array.from(lemmatizer.forms.entries()),
+    formLabels: Array.from(lemmatizer.formLabels.entries())
   };
   const tokData = {
     key: 'tokenizer',
@@ -684,6 +697,7 @@ async function loadAll() {
       if (lemReq.result) {
         lemmatizer.lemmas = new Map(lemReq.result.lemmas);
         lemmatizer.forms = new Map(lemReq.result.forms);
+        lemmatizer.formLabels = new Map(lemReq.result.formLabels || []);
       }
     };
     const tokReq = tx.objectStore('tokenizer').get('tokenizer');
@@ -720,11 +734,13 @@ function switchTab(e, tabId) {
 function teachLemma() {
   const sf = document.getElementById('surfaceForm').value.trim().toLowerCase();
   const l = document.getElementById('lemmaForm').value.trim().toLowerCase();
+  const fl = document.getElementById('formLabel').value.trim();
   if (!sf || !l) return alert('Enter both forms');
-  lemmatizer.teach(sf, l);
+  lemmatizer.teach(sf, l, fl);
   saveAll();
   document.getElementById('surfaceForm').value = '';
   document.getElementById('lemmaForm').value = '';
+  document.getElementById('formLabel').value = '';
   renderLemmaList();
 }
 
@@ -739,7 +755,7 @@ function renderLemmaList() {
     <div class="lemma-family">
       <div class="lemma-name">${lemma}</div>
       <div class="form-list">
-        ${forms.map(f => `<span class="form-badge">${f}</span>`).join('')}
+        ${forms.map(f => `<span class="form-badge">${f.surface}${f.form ? ' <em>(' + f.form + ')</em>' : ''}</span>`).join('')}
       </div>
     </div>
   `).join('');
@@ -822,7 +838,8 @@ function tokenizeTest() {
     });
     const classified = tokenizer.classifyWord(word, { before, after });
     const lemma = lemmatizer.getLemma(word);
-    tokens.push({ word, ...classified, lemma });
+    const formLabel = lemmatizer.getFormLabel(word);
+    tokens.push({ word, ...classified, lemma, formLabel });
   });
   renderTokenOutput(tokens);
 }
@@ -834,6 +851,7 @@ function renderTokenOutput(tokens) {
       <span class="word">${t.word}</span>
       <span class="type">${t.type}</span>
       <span class="lemma">${t.lemma}</span>
+      ${t.formLabel ? `<span class="lemma">${t.formLabel}</span>` : ''}
       <span class="conf">${(t.confidence * 100).toFixed(0)}%</span>
     </div>
   `).join('');
@@ -859,7 +877,7 @@ function performSearch() {
   }
   const results = [];
   lemmatizer.getAllLemmas().forEach(({ lemma, forms }) => {
-    if (lemma.includes(query) || forms.some(f => f.includes(query))) {
+    if (lemma.includes(query) || forms.some(f => f.surface.includes(query) || (f.form && f.form.toLowerCase().includes(query)))) {
       results.push({ lemma, forms });
     }
   });
@@ -871,7 +889,7 @@ function performSearch() {
   container.innerHTML = results.map(({ lemma, forms }) => `
     <div class="search-result" onclick="showLemmaDetails('${lemma}')">
       <div class="result-lemma">${lemma}</div>
-      <div class="result-forms">${forms.join(', ')}</div>
+      <div class="result-forms">${forms.map(f => f.surface + (f.form ? ' (' + f.form + ')' : '')).join(', ')}</div>
       ${tokenizer.lemmaContexts.has(lemma) ? `<div class="result-contexts">${tokenizer.lemmaContexts.get(lemma).size} types</div>` : ''}
     </div>
   `).join('');
@@ -884,7 +902,7 @@ function showLemmaDetails(lemma) {
     <div class="lemma-family">
       <div class="lemma-name">${lemma}</div>
       <div class="form-list">
-        ${forms.map(f => `<span class="form-badge">${f}</span>`).join('')}
+        ${forms.map(f => `<span class="form-badge">${f.surface}${f.form ? ' <em>(' + f.form + ')</em>' : ''}</span>`).join('')}
       </div>
   `;
   if (contexts && contexts.size > 0) {
