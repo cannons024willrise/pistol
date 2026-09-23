@@ -194,6 +194,8 @@ button:disabled { background: #333; color: #666; cursor: not-allowed; }
   transition: border-color 0.2s;
 }
 .word-card.complete { border-color: #2d8a4d; }
+.word-card.punct { border-style: dashed; opacity: 0.75; }
+.word-card.punct .value { color: #d4a574; }
 .word-card-header {
   display: flex;
   align-items: baseline;
@@ -702,14 +704,30 @@ function activateTab(tabId) {
 function switchTab(e, tabId) { activateTab(tabId); }
 function switchTabById(tabId) { activateTab(tabId); }
 
+// ===== TEXT TOKENIZATION =====
+// Splits a sentence into words AND punctuation marks as separate tokens,
+// while preserving the original left-to-right order. Contractions like
+// "don't" or "Sarah's" stay as one word token; punctuation runs (.,!?;:"()-—)
+// become their own token(s).
+function tokenizeText(text) {
+  const re = /[A-Za-z0-9]+(?:['\u2019][A-Za-z0-9]+)*|[^\sA-Za-z0-9]+/g;
+  return text.match(re) || [];
+}
+function isPunctuationToken(tok) {
+  return /^[^A-Za-z0-9]+$/.test(tok);
+}
+
 // ===== TEACH STATE =====
 let teachWords = [];
 
 function parseSentence() {
   const text = document.getElementById('teachSentence').value.trim();
   if (!text) return alert('Enter a sentence');
-  const words = text.split(/\s+/);
+  const words = tokenizeText(text);
   teachWords = words.map(w => {
+    if (isPunctuationToken(w)) {
+      return { value: w, type: 'punctuation', base: w, grammar: '', guessSource: 'punctuation' };
+    }
     const resolved = lemmatizer.resolve(w);
     return {
       value: w,
@@ -749,7 +767,7 @@ function renderWordCards() {
     const hint = (w.guessSource === 'learned-pattern' && !w.base)
       ? `<span class="guess-hint" onclick="acceptGuess(${idx})">use pattern guess: "${lemmatizer.resolve(w.value).base}"</span>` : '';
     return `
-    <div class="word-card ${w.type && w.base ? 'complete' : ''}">
+    <div class="word-card ${w.type && w.base ? 'complete' : ''} ${w.guessSource === 'punctuation' ? 'punct' : ''}">
       <div class="word-card-header">
         <div>
           <div class="idx">Word #${idx + 1}</div>
@@ -767,6 +785,7 @@ function renderWordCards() {
           <option value="location" ${w.type === 'location' ? 'selected' : ''}>Location</option>
           <option value="object" ${w.type === 'object' ? 'selected' : ''}>Object</option>
           <option value="modifier" ${w.type === 'modifier' ? 'selected' : ''}>Modifier</option>
+          <option value="punctuation" ${w.type === 'punctuation' ? 'selected' : ''}>Punctuation</option>
         </select>
       </div>
 
@@ -823,9 +842,14 @@ function clearTeach() {
 function tokenizeTest() {
   const text = document.getElementById('testSentence').value.trim();
   if (!text) return alert('Enter a sentence');
-  const words = text.split(/\s+/);
-  const resolved = words.map(w => lemmatizer.resolve(w));
+  const words = tokenizeText(text);
+  const resolved = words.map(w => isPunctuationToken(w)
+    ? { base: w, source: 'punctuation', confidence: 1 }
+    : lemmatizer.resolve(w));
   const tokens = words.map((word, idx) => {
+    if (isPunctuationToken(word)) {
+      return { word, base: word, type: 'punctuation', confidence: 1, grammar: null, baseSource: 'punctuation' };
+    }
     const before = words.slice(Math.max(0, idx - 2), idx).map((w, i) => resolved[Math.max(0, idx - 2) + i].base + '/' + typeGuessFor(resolved[Math.max(0, idx - 2) + i].base));
     const after = words.slice(idx + 1, Math.min(words.length, idx + 3)).map((w, i) => resolved[idx + 1 + i].base + '/' + typeGuessFor(resolved[idx + 1 + i].base));
     const base = resolved[idx].base;
