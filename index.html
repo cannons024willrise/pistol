@@ -765,20 +765,21 @@ function renderWordCards() {
   btn.disabled = false;
   grid.innerHTML = teachWords.map((w, idx) => {
     const hint = (w.guessSource === 'learned-pattern' && !w.base)
-      ? `<span class="guess-hint" onclick="acceptGuess(${idx})">use pattern guess: "${lemmatizer.resolve(w.value).base}"</span>` : '';
+      ? `<span class="guess-hint" id="wordhint-${idx}" onclick="acceptGuess(${idx})">use pattern guess: "${lemmatizer.resolve(w.value).base}"</span>`
+      : `<span class="guess-hint" id="wordhint-${idx}" style="display:none;"></span>`;
     return `
-    <div class="word-card ${w.type && w.base ? 'complete' : ''} ${w.guessSource === 'punctuation' ? 'punct' : ''}">
+    <div class="word-card ${w.type && w.base ? 'complete' : ''} ${w.guessSource === 'punctuation' ? 'punct' : ''}" id="wordcard-${idx}">
       <div class="word-card-header">
         <div>
           <div class="idx">Word #${idx + 1}</div>
           <div class="value">${w.value}</div>
         </div>
-        <div class="status">${w.type && w.base ? '✅' : '○'}</div>
+        <div class="status" id="wordstatus-${idx}">${w.type && w.base ? '✅' : '○'}</div>
       </div>
 
       <div class="field-group">
         <label>Type</label>
-        <select onchange="updateWordField(${idx}, 'type', this.value)">
+        <select id="wordtype-${idx}" onchange="updateWordField(${idx}, 'type', this.value)">
           <option value="">Choose type...</option>
           <option value="person" ${w.type === 'person' ? 'selected' : ''}>Person</option>
           <option value="action" ${w.type === 'action' ? 'selected' : ''}>Action</option>
@@ -791,28 +792,42 @@ function renderWordCards() {
 
       <div class="field-group">
         <label>Base form</label>
-        <input type="text" placeholder="e.g. run" value="${w.base}" oninput="updateWordField(${idx}, 'base', this.value)">
+        <input type="text" id="wordbase-${idx}" placeholder="e.g. run" value="${w.base}" oninput="updateWordField(${idx}, 'base', this.value)">
         ${hint}
       </div>
 
       <div class="field-group">
         <label>Grammar form (blank = name)</label>
-        <input type="text" placeholder="e.g. present continuous" value="${w.grammar}" oninput="updateWordField(${idx}, 'grammar', this.value)">
+        <input type="text" id="wordgrammar-${idx}" placeholder="e.g. present continuous" value="${w.grammar}" oninput="updateWordField(${idx}, 'grammar', this.value)">
       </div>
     </div>
   `;
   }).join('');
 }
 
+// Updates the data model and patches just the affected card's DOM in place —
+// never re-renders the whole grid, so the input the user is actively typing
+// in never loses focus or cursor position.
 function updateWordField(idx, field, value) {
   teachWords[idx][field] = value;
-  if (field === 'base') renderWordCards();
+  const card = document.getElementById(`wordcard-${idx}`);
+  const w = teachWords[idx];
+  const complete = !!(w.type && w.base);
+  if (card) card.classList.toggle('complete', complete);
+  const status = document.getElementById(`wordstatus-${idx}`);
+  if (status) status.textContent = complete ? '✅' : '○';
+  if (field === 'base') {
+    const hint = document.getElementById(`wordhint-${idx}`);
+    if (hint) hint.style.display = value ? 'none' : (hint.textContent ? 'inline-block' : 'none');
+  }
 }
 
 function acceptGuess(idx) {
   const resolved = lemmatizer.resolve(teachWords[idx].value);
   teachWords[idx].base = resolved.base;
-  renderWordCards();
+  const input = document.getElementById(`wordbase-${idx}`);
+  if (input) input.value = resolved.base;
+  updateWordField(idx, 'base', resolved.base);
 }
 
 function learnSentence() {
