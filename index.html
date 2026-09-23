@@ -3,38 +3,27 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pistol: Context + Lemma Learning</title>
+<title>Pistol: Sentence-Based Learning</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html, body { width: 100%; height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
-body { 
-  background: #1a1a1a; 
-  color: #e0e0e0; 
-  display: flex; 
-  flex-direction: column; 
+body {
+  background: #1a1a1a;
+  color: #e0e0e0;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
 }
 
-/* HEADER */
 header {
   padding: 1rem 1.5rem;
   border-bottom: 1px solid #333;
   background: #0d0d0d;
   flex-shrink: 0;
 }
-header h1 {
-  font-size: 1.3rem;
-  font-weight: 600;
-  color: #fff;
-  margin: 0;
-}
-header p {
-  font-size: 0.85rem;
-  color: #999;
-  margin: 0.3rem 0 0 0;
-}
+header h1 { font-size: 1.3rem; font-weight: 600; color: #fff; margin: 0; }
+header p { font-size: 0.85rem; color: #999; margin: 0.3rem 0 0 0; }
 
-/* TABS */
 .tabs {
   display: flex;
   gap: 0;
@@ -55,18 +44,9 @@ header p {
   transition: color 0.2s;
 }
 .tab-btn:hover { color: #ccc; }
-.tab-btn.active {
-  color: #fff;
-  border-bottom-color: #4a9eff;
-}
+.tab-btn.active { color: #fff; border-bottom-color: #4a9eff; }
 
-/* MAIN LAYOUT */
-.container {
-  display: flex;
-  flex: 1;
-  overflow: hidden;
-  gap: 0;
-}
+.container { display: flex; flex: 1; overflow: hidden; gap: 0; }
 
 .panel {
   flex: 1;
@@ -84,17 +64,8 @@ header p {
   border-bottom: 1px solid #333;
   flex-shrink: 0;
 }
-.panel-header-title {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #fff;
-  margin: 0;
-}
-.panel-header-subtitle {
-  font-size: 0.75rem;
-  color: #666;
-  margin: 0.3rem 0 0 0;
-}
+.panel-header-title { font-size: 0.9rem; font-weight: 600; color: #fff; margin: 0; }
+.panel-header-subtitle { font-size: 0.75rem; color: #666; margin: 0.3rem 0 0 0; }
 
 .panel-body {
   flex: 1;
@@ -105,7 +76,6 @@ header p {
   gap: 1rem;
 }
 
-/* SECTIONS */
 .section {
   background: #0d0d0d;
   border: 1px solid #333;
@@ -121,10 +91,7 @@ header p {
   margin-bottom: 0.8rem;
 }
 
-/* INPUTS */
-input[type="text"],
-textarea,
-select {
+input[type="text"], textarea, select {
   width: 100%;
   padding: 0.6rem;
   background: #1a1a1a;
@@ -136,14 +103,11 @@ select {
   margin-bottom: 0.6rem;
   transition: border 0.2s;
 }
-input:focus,
-textarea:focus,
-select:focus {
+input:focus, textarea:focus, select:focus {
   outline: none;
   border-color: #4a9eff;
   background: #111;
 }
-
 textarea {
   font-family: 'Monaco', 'Menlo', monospace;
   font-size: 0.85rem;
@@ -152,7 +116,6 @@ textarea {
   line-height: 1.5;
 }
 
-/* BUTTONS */
 button {
   padding: 0.6rem 1rem;
   background: #4a9eff;
@@ -166,20 +129,14 @@ button {
 }
 button:hover { background: #2e7fd4; }
 button:active { background: #1f5ba0; }
+button:disabled { background: #333; color: #666; cursor: not-allowed; }
 
-.btn-secondary {
-  background: #333;
-  color: #e0e0e0;
-}
+.btn-secondary { background: #333; color: #e0e0e0; }
 .btn-secondary:hover { background: #444; }
+.btn-small { padding: 0.3rem 0.6rem; font-size: 0.75rem; }
 
-.button-row {
-  display: flex;
-  gap: 0.6rem;
-  flex-wrap: wrap;
-}
+.button-row { display: flex; gap: 0.6rem; flex-wrap: wrap; }
 
-/* STATS BOX */
 .stats-box {
   background: #0a3d66;
   border-left: 3px solid #4a9eff;
@@ -190,7 +147,53 @@ button:active { background: #1f5ba0; }
   margin-bottom: 0.5rem;
 }
 
-/* WORD TOKENS */
+/* WORD ROW EDITOR */
+.word-row-list { display: flex; flex-direction: column; gap: 0.6rem; }
+.word-row {
+  display: grid;
+  grid-template-columns: 90px 1fr 1fr 1fr auto;
+  gap: 0.5rem;
+  align-items: center;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 4px;
+  padding: 0.6rem;
+}
+.word-row.complete { border-color: #2d5a3d; }
+.word-row .word-index { font-size: 0.7rem; color: #666; }
+.word-row .word-value {
+  font-family: 'Monaco', monospace;
+  font-weight: 600;
+  color: #fff;
+  font-size: 0.9rem;
+  word-break: break-word;
+}
+.word-row input, .word-row select {
+  margin-bottom: 0;
+  padding: 0.4rem 0.5rem;
+  font-size: 0.8rem;
+}
+.word-row .guess-hint {
+  font-size: 0.65rem;
+  color: #4a9eff;
+  cursor: pointer;
+  margin-top: 0.15rem;
+  display: block;
+}
+.word-row .field-col { display: flex; flex-direction: column; }
+.word-row .row-status { font-size: 0.7rem; text-align: center; }
+
+.row-label-strip {
+  display: grid;
+  grid-template-columns: 90px 1fr 1fr 1fr auto;
+  gap: 0.5rem;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #666;
+  padding: 0 0.6rem;
+}
+
 .word-tokens {
   display: flex;
   flex-wrap: wrap;
@@ -202,35 +205,15 @@ button:active { background: #1f5ba0; }
   min-height: 60px;
   align-content: flex-start;
 }
-
 .word-token {
   padding: 0.4rem 0.8rem;
   background: #2a2a2a;
   border: 1px solid #444;
   border-radius: 3px;
-  cursor: pointer;
-  transition: all 0.15s;
   font-size: 0.85rem;
   color: #e0e0e0;
-  user-select: none;
-}
-.word-token:hover {
-  border-color: #4a9eff;
-  background: #1a1a1a;
-}
-.word-token.selected {
-  background: #4a9eff;
-  color: #fff;
-  border-color: #4a9eff;
-  font-weight: 600;
-}
-.word-token.tagged {
-  border-color: #4a9eff;
-  color: #4a9eff;
-  font-weight: 600;
 }
 
-/* LEMMA FAMILY */
 .lemma-family {
   background: #1a1a1a;
   border: 1px solid #333;
@@ -238,29 +221,11 @@ button:active { background: #1f5ba0; }
   border-radius: 3px;
   margin-bottom: 0.8rem;
 }
-.lemma-name {
-  font-family: 'Monaco', monospace;
-  font-weight: 600;
-  color: #4a9eff;
-  font-size: 0.95rem;
-  margin-bottom: 0.5rem;
-}
-.form-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-}
-.form-badge {
-  padding: 0.3rem 0.6rem;
-  background: #2a2a2a;
-  border: 1px solid #444;
-  border-radius: 3px;
-  font-size: 0.75rem;
-  font-family: 'Monaco', monospace;
-  color: #b3d9ff;
-}
+.lemma-name { font-family: 'Monaco', monospace; font-weight: 600; color: #4a9eff; font-size: 0.95rem; margin-bottom: 0.5rem; }
+.form-list { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.form-badge { padding: 0.3rem 0.6rem; background: #2a2a2a; border: 1px solid #444; border-radius: 3px; font-size: 0.75rem; font-family: 'Monaco', monospace; color: #b3d9ff; }
+.form-badge em { color: #888; font-style: normal; }
 
-/* TOKEN OUTPUT */
 .token-display {
   display: flex;
   flex-wrap: wrap;
@@ -272,24 +237,25 @@ button:active { background: #1f5ba0; }
   min-height: 60px;
   align-content: flex-start;
 }
-
 .token {
   display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.4rem 0.7rem;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.5rem 0.7rem;
   background: #2a2a2a;
   border: 1px solid #444;
-  border-radius: 14px;
+  border-radius: 6px;
   font-size: 0.75rem;
   font-family: 'Monaco', monospace;
+  min-width: 90px;
 }
-.token .word { color: #fff; font-weight: 600; }
+.token .word { color: #fff; font-weight: 600; font-size: 0.85rem; }
 .token .type { color: #4a9eff; }
-.token .lemma { color: #999; font-size: 0.7rem; }
+.token .base { color: #999; }
+.token .gform { color: #d4a574; }
 .token .conf { color: #666; font-size: 0.65rem; }
+.token .src { color: #555; font-size: 0.6rem; text-transform: uppercase; }
 
-/* SEARCH RESULTS */
 .search-result {
   background: #1a1a1a;
   border-left: 3px solid #4a9eff;
@@ -300,49 +266,30 @@ button:active { background: #1f5ba0; }
   margin-bottom: 0.6rem;
 }
 .search-result:hover { background: #222; }
-.result-lemma {
-  font-family: 'Monaco', monospace;
-  font-weight: 600;
-  color: #4a9eff;
-  font-size: 0.95rem;
-  margin-bottom: 0.3rem;
-}
-.result-forms,
-.result-contexts {
-  font-size: 0.75rem;
-  color: #999;
-  margin-top: 0.2rem;
+.result-lemma { font-family: 'Monaco', monospace; font-weight: 600; color: #4a9eff; font-size: 0.95rem; margin-bottom: 0.3rem; }
+.result-forms, .result-contexts { font-size: 0.75rem; color: #999; margin-top: 0.2rem; }
+
+.empty-state { color: #666; font-style: italic; text-align: center; padding: 2rem 1rem; }
+
+.tab-pane { display: none; flex: 1; overflow: hidden; }
+.tab-pane.active { display: flex; }
+
+.guide-box {
+  background: #1a1a1a;
+  border-left: 3px solid #8b7355;
+  padding: 0.7rem 0.9rem;
+  border-radius: 3px;
+  font-size: 0.8rem;
+  color: #ccc;
+  line-height: 1.5;
 }
 
-/* EMPTY STATE */
-.empty-state {
-  color: #666;
-  font-style: italic;
-  text-align: center;
-  padding: 2rem 1rem;
-}
-
-/* TAB PANES */
-.tab-pane {
-  display: none;
-  flex: 1;
-  overflow: hidden;
-}
-.tab-pane.active {
-  display: flex;
-}
-
-/* RESPONSIVE */
 @media (max-width: 1024px) {
-  .container {
-    flex-direction: column;
-  }
-  .panel {
-    border-right: none;
-    border-bottom: 1px solid #333;
-    min-height: 300px;
-  }
+  .container { flex-direction: column; }
+  .panel { border-right: none; border-bottom: 1px solid #333; min-height: 300px; }
   .panel:last-child { border-bottom: none; }
+  .word-row, .row-label-strip { grid-template-columns: 1fr 1fr; grid-auto-flow: row; }
+  .row-label-strip { display: none; }
 }
 
 @media (max-width: 640px) {
@@ -359,92 +306,53 @@ button:active { background: #1f5ba0; }
 
 <header>
   <h1>Pistol</h1>
-  <p>Context-based lemma learning</p>
+  <p>Sentence-based lemma &amp; context learning</p>
 </header>
 
 <div class="tabs">
-  <button class="tab-btn active" onclick="switchTab(event, 'lemmas')">Teach Lemmas</button>
-  <button class="tab-btn" onclick="switchTab(event, 'context')">Teach Context</button>
+  <button class="tab-btn active" onclick="switchTab(event, 'teach')">Teach</button>
   <button class="tab-btn" onclick="switchTab(event, 'tokenize')">Test Tokenize</button>
   <button class="tab-btn" onclick="switchTab(event, 'search')">Search</button>
 </div>
 
-<!-- TAB: TEACH LEMMAS -->
-<div id="lemmas" class="tab-pane active">
+<!-- TAB: TEACH (unified sentence -> per-word Type/Base/Grammar) -->
+<div id="teach" class="tab-pane active">
   <div class="container">
 
     <div class="panel">
       <div class="panel-header">
-        <h3 class="panel-header-title">Teach Lemmas</h3>
-        <p class="panel-header-subtitle">running → run, saw → see</p>
+        <h3 class="panel-header-title">Teach a Sentence</h3>
+        <p class="panel-header-subtitle">Word order is preserved and used as context</p>
       </div>
       <div class="panel-body">
-        
+
         <div class="stats-box" id="statsBox">
-          Lemmas: <strong id="lemmaCount">0</strong> | Contexts: <strong id="contextCount">0</strong>
+          Lemmas: <strong id="lemmaCount">0</strong> | Contexts: <strong id="contextCount">0</strong> | Learned patterns: <strong id="patternCount">0</strong>
+        </div>
+
+        <div class="guide-box">
+          Enter a sentence. Each word gets its own row, in order. For each word set <strong>Type</strong>, <strong>Base form</strong>, and optionally <strong>Grammar form</strong> (leave grammar blank for names). Base-form guesses come from patterns learned from words you've already taught — nothing is hardcoded.
         </div>
 
         <div class="section">
-          <div class="section-title">Add Lemma Pair</div>
-          <input type="text" id="surfaceForm" placeholder="Surface form (e.g., running)">
-          <input type="text" id="lemmaForm" placeholder="Lemma (e.g., run)">
-          <input type="text" id="formLabel" placeholder="Grammatical form (e.g., present continuous)">
-          <button onclick="teachLemma()">Add Pair</button>
-        </div>
-
-        <div class="section" style="flex: 1; overflow-y: auto;">
-          <div class="section-title">Learned Lemmas</div>
-          <div id="lemmaList">
-            <div class="empty-state">No lemmas yet</div>
-          </div>
-        </div>
-
-      </div>
-    </div>
-
-  </div>
-</div>
-
-<!-- TAB: TEACH CONTEXT -->
-<div id="context" class="tab-pane">
-  <div class="container">
-
-    <div class="panel">
-      <div class="panel-header">
-        <h3 class="panel-header-title">Teach Context</h3>
-        <p class="panel-header-subtitle">Tag words in sentences</p>
-      </div>
-      <div class="panel-body">
-
-        <div class="section">
-          <div class="section-title">Paste Sentence</div>
-          <textarea id="teachSentence" placeholder="E.g., Sarah walked into the office"></textarea>
+          <div class="section-title">Sentence</div>
+          <textarea id="teachSentence" placeholder="E.g., Sarah was running toward the office"></textarea>
           <div class="button-row">
-            <button onclick="parseSentence()">Parse</button>
+            <button onclick="parseSentence()">Break Into Words</button>
             <button class="btn-secondary" onclick="clearTeach()">Clear</button>
           </div>
         </div>
 
-        <div class="section">
-          <div class="section-title">Click Words to Select</div>
-          <div class="word-tokens" id="sentenceEditor">
-            <div class="empty-state" style="width: 100%;">Parse above</div>
+        <div class="section" style="flex: 1; overflow-y: auto;">
+          <div class="section-title">Word Tokens (in order)</div>
+          <div class="row-label-strip">
+            <span>Word</span><span>Type</span><span>Base form</span><span>Grammar form</span><span></span>
           </div>
-        </div>
-
-        <div class="section">
-          <div class="section-title">Tag Selected Words</div>
-          <select id="typeSelect">
-            <option value="">Choose type...</option>
-            <option value="person">Person</option>
-            <option value="action">Action</option>
-            <option value="location">Location</option>
-            <option value="object">Object</option>
-            <option value="modifier">Modifier</option>
-          </select>
-          <div class="button-row">
-            <button onclick="applyType()">Tag</button>
-            <button class="btn-secondary" onclick="learnSentence()">Learn Sentence</button>
+          <div class="word-row-list" id="wordRowList">
+            <div class="empty-state">Break a sentence into words above</div>
+          </div>
+          <div class="button-row" style="margin-top: 0.8rem;">
+            <button onclick="learnSentence()" id="learnSentenceBtn" disabled>Learn Sentence</button>
           </div>
         </div>
 
@@ -461,13 +369,13 @@ button:active { background: #1f5ba0; }
     <div class="panel">
       <div class="panel-header">
         <h3 class="panel-header-title">Test Tokenize</h3>
-        <p class="panel-header-subtitle">Predict on new text</p>
+        <p class="panel-header-subtitle">Predict Type / Base form / Grammar form on new text</p>
       </div>
       <div class="panel-body">
 
         <div class="section">
           <div class="section-title">New Sentence</div>
-          <textarea id="testSentence" placeholder="E.g., Marcus was running"></textarea>
+          <textarea id="testSentence" placeholder="E.g., Marcus was walking"></textarea>
           <div class="button-row">
             <button onclick="tokenizeTest()">Tokenize</button>
             <button class="btn-secondary" onclick="clearTest()">Clear</button>
@@ -511,7 +419,7 @@ button:active { background: #1f5ba0; }
     <div class="panel">
       <div class="panel-header">
         <h3 class="panel-header-title">Lemma Details</h3>
-        <p class="panel-header-subtitle">Browse & contexts</p>
+        <p class="panel-header-subtitle">Browse &amp; contexts</p>
       </div>
       <div class="panel-body">
         <div id="lemmaDetails">
@@ -523,38 +431,109 @@ button:active { background: #1f5ba0; }
   </div>
 </div>
 
-
 <script>
+// ===== PATTERN LEARNER =====
+// Learns surface -> base transformations purely from taught examples.
+// No hardcoded suffixes. Given (surface, base) pairs, it records the
+// changed tail (e.g. "ning" -> "n" from running/run... actually computed
+// from the true diverging point) and reuses the most common transformation
+// whose "from" tail matches the end of an unseen word.
+class PatternLearner {
+  constructor() {
+    this.rules = new Map(); // fromSuffix -> Map(toSuffix -> count)
+  }
+
+  learn(surface, base) {
+    surface = surface.toLowerCase();
+    base = base.toLowerCase();
+    if (surface === base) return;
+    let i = 0;
+    const maxLen = Math.min(surface.length, base.length);
+    while (i < maxLen && surface[i] === base[i]) i++;
+    const fromSuffix = surface.slice(i);
+    const toSuffix = base.slice(i);
+    if (fromSuffix === '') return;
+    if (!this.rules.has(fromSuffix)) this.rules.set(fromSuffix, new Map());
+    const m = this.rules.get(fromSuffix);
+    m.set(toSuffix, (m.get(toSuffix) || 0) + 1);
+  }
+
+  // Finds the longest learned "fromSuffix" that the word ends with,
+  // and applies the most frequent transformation learned for it.
+  guess(word) {
+    word = word.toLowerCase();
+    let bestFrom = null, bestTo = null, bestLen = -1, bestCount = -1;
+    this.rules.forEach((toMap, fromSuffix) => {
+      if (fromSuffix.length <= word.length && word.endsWith(fromSuffix)) {
+        let topTo = null, topCount = -1;
+        toMap.forEach((count, to) => {
+          if (count > topCount) { topCount = count; topTo = to; }
+        });
+        if (fromSuffix.length > bestLen || (fromSuffix.length === bestLen && topCount > bestCount)) {
+          bestLen = fromSuffix.length;
+          bestFrom = fromSuffix;
+          bestTo = topTo;
+          bestCount = topCount;
+        }
+      }
+    });
+    if (bestFrom === null) return null;
+    const stem = word.slice(0, word.length - bestFrom.length);
+    return { base: stem + bestTo, matchedSuffix: bestFrom, support: bestCount };
+  }
+
+  size() { return this.rules.size; }
+
+  toJSON() {
+    return Array.from(this.rules.entries()).map(([from, toMap]) => [from, Array.from(toMap.entries())]);
+  }
+  fromJSON(data) {
+    this.rules = new Map();
+    (data || []).forEach(([from, toEntries]) => {
+      this.rules.set(from, new Map(toEntries));
+    });
+  }
+}
+
 // ===== LEMMATIZER =====
 class Lemmatizer {
   constructor() {
-    this.lemmas = new Map();     // lemma -> Set of surface forms
-    this.forms = new Map();      // surface form -> lemma
-    this.formLabels = new Map(); // surface form -> grammatical form label (e.g. "present continuous")
+    this.lemmas = new Map();      // base -> Set of surface forms
+    this.forms = new Map();       // surface -> base (taught, exact)
+    this.formLabels = new Map();  // surface -> grammar form label (or null for names)
+    this.patterns = new PatternLearner();
   }
 
-  teach(surfaceForm, lemma, formLabel) {
+  teach(surfaceForm, base, grammarForm) {
     const sf = surfaceForm.toLowerCase();
-    const l = lemma.toLowerCase();
-    if (!this.lemmas.has(l)) {
-      this.lemmas.set(l, new Set());
+    const b = base.toLowerCase();
+    if (!this.lemmas.has(b)) this.lemmas.set(b, new Set());
+    this.lemmas.get(b).add(sf);
+    this.forms.set(sf, b);
+    if (grammarForm && grammarForm.trim()) {
+      this.formLabels.set(sf, grammarForm.trim());
+    } else {
+      this.formLabels.delete(sf);
     }
-    this.lemmas.get(l).add(sf);
-    this.forms.set(sf, l);
-    if (formLabel && formLabel.trim()) {
-      this.formLabels.set(sf, formLabel.trim());
+    this.patterns.learn(sf, b);
+  }
+
+  // Returns { base, source, confidence, matchedSuffix }
+  // source: 'taught' | 'learned-pattern' | 'unknown'
+  resolve(word) {
+    const lower = word.toLowerCase();
+    if (this.forms.has(lower)) {
+      return { base: this.forms.get(lower), source: 'taught', confidence: 1, matchedSuffix: null };
     }
+    const guess = this.patterns.guess(lower);
+    if (guess) {
+      return { base: guess.base, source: 'learned-pattern', confidence: Math.min(0.9, 0.4 + guess.support * 0.1), matchedSuffix: guess.matchedSuffix };
+    }
+    return { base: lower, source: 'unknown', confidence: 0, matchedSuffix: null };
   }
 
   getLemma(word) {
-    const lower = word.toLowerCase();
-    if (this.forms.has(lower)) {
-      return this.forms.get(lower);
-    }
-    if (lower.endsWith('ing')) return lower.slice(0, -3);
-    if (lower.endsWith('ed')) return lower.slice(0, -2);
-    if (lower.endsWith('s') && !lower.endsWith('ss')) return lower.slice(0, -1);
-    return lower;
+    return this.resolve(word).base;
   }
 
   getFormLabel(surfaceForm) {
@@ -577,38 +556,34 @@ class Lemmatizer {
 }
 
 // ===== CONTEXT TOKENIZER =====
+// Learns, per base-form (lemma), which Type it takes given the
+// base-forms/types of its neighbors in a tagged sentence.
 class ContextTokenizer {
   constructor(lemmatizer) {
     this.lemmatizer = lemmatizer;
-    this.lemmaContexts = new Map();
+    this.lemmaContexts = new Map(); // lemma -> Map(type -> [contexts])
     this.sentenceCount = 0;
   }
 
   learnSentence(tokens) {
+    // tokens: [{value, type, base}] in original sentence order
     this.sentenceCount++;
     tokens.forEach((token, idx) => {
       if (!token.type) return;
-      const lemma = this.lemmatizer.getLemma(token.value);
-      const before = tokens
-        .slice(Math.max(0, idx - 2), idx)
-        .map(t => this.lemmatizer.getLemma(t.value) + '/' + (t.type || 'unk'));
-      const after = tokens
-        .slice(idx + 1, Math.min(tokens.length, idx + 3))
-        .map(t => this.lemmatizer.getLemma(t.value) + '/' + (t.type || 'unk'));
+      const lemma = token.base || this.lemmatizer.getLemma(token.value);
+      const before = tokens.slice(Math.max(0, idx - 2), idx)
+        .map(t => (t.base || this.lemmatizer.getLemma(t.value)) + '/' + (t.type || 'unk'));
+      const after = tokens.slice(idx + 1, Math.min(tokens.length, idx + 3))
+        .map(t => (t.base || this.lemmatizer.getLemma(t.value)) + '/' + (t.type || 'unk'));
       const context = { before, after };
-      if (!this.lemmaContexts.has(lemma)) {
-        this.lemmaContexts.set(lemma, new Map());
-      }
+      if (!this.lemmaContexts.has(lemma)) this.lemmaContexts.set(lemma, new Map());
       const typeMap = this.lemmaContexts.get(lemma);
-      if (!typeMap.has(token.type)) {
-        typeMap.set(token.type, []);
-      }
+      if (!typeMap.has(token.type)) typeMap.set(token.type, []);
       typeMap.get(token.type).push(context);
     });
   }
 
-  classifyWord(word, neighborLemmas) {
-    const lemma = this.lemmatizer.getLemma(word);
+  classifyWord(lemma, neighborLemmas) {
     const scores = new Map();
     if (this.lemmaContexts.has(lemma)) {
       const typeMap = this.lemmaContexts.get(lemma);
@@ -616,12 +591,8 @@ class ContextTokenizer {
         let score = 0;
         contexts.forEach(ctx => {
           let matches = 0;
-          neighborLemmas.before.forEach((nl, i) => {
-            if (ctx.before[i] === nl) matches++;
-          });
-          neighborLemmas.after.forEach((nl, i) => {
-            if (ctx.after[i] === nl) matches++;
-          });
+          neighborLemmas.before.forEach((nl, i) => { if (ctx.before[i] === nl) matches++; });
+          neighborLemmas.after.forEach((nl, i) => { if (ctx.after[i] === nl) matches++; });
           score += matches / (neighborLemmas.before.length + neighborLemmas.after.length + 1);
         });
         scores.set(type, score / contexts.length);
@@ -629,21 +600,13 @@ class ContextTokenizer {
     }
     if (scores.size === 0) return { type: 'unknown', confidence: 0 };
     let best = { type: 'unknown', confidence: 0 };
-    scores.forEach((score, type) => {
-      if (score > best.confidence) {
-        best = { type, confidence: score };
-      }
-    });
+    scores.forEach((score, type) => { if (score > best.confidence) best = { type, confidence: score }; });
     return best;
   }
 
   getStats() {
     let totalContexts = 0;
-    this.lemmaContexts.forEach(typeMap => {
-      typeMap.forEach(contexts => {
-        totalContexts += contexts.length;
-      });
-    });
+    this.lemmaContexts.forEach(typeMap => typeMap.forEach(contexts => totalContexts += contexts.length));
     return { sentences: this.sentenceCount, contexts: totalContexts };
   }
 }
@@ -653,19 +616,17 @@ let db, lemmatizer, tokenizer;
 
 async function initDB() {
   return new Promise((resolve) => {
-    const req = indexedDB.open('PistolLemmaDB', 1);
+    const req = indexedDB.open('PistolLemmaDB', 2);
     req.onerror = () => {
       lemmatizer = new Lemmatizer();
       tokenizer = new ContextTokenizer(lemmatizer);
       resolve();
     };
-    req.onsuccess = () => {
-      db = req.result;
-      loadAll().then(resolve);
-    };
+    req.onsuccess = () => { db = req.result; loadAll().then(resolve); };
     req.onupgradeneeded = (e) => {
-      e.target.result.createObjectStore('lemmatizer', { keyPath: 'key' });
-      e.target.result.createObjectStore('tokenizer', { keyPath: 'key' });
+      const d = e.target.result;
+      if (!d.objectStoreNames.contains('lemmatizer')) d.createObjectStore('lemmatizer', { keyPath: 'key' });
+      if (!d.objectStoreNames.contains('tokenizer')) d.createObjectStore('tokenizer', { keyPath: 'key' });
     };
   });
 }
@@ -674,15 +635,15 @@ async function saveAll() {
   if (!db) return;
   const lemData = {
     key: 'lemmatizer',
-    lemmas: Array.from(lemmatizer.lemmas.entries()),
+    lemmas: Array.from(lemmatizer.lemmas.entries()).map(([k, v]) => [k, Array.from(v)]),
     forms: Array.from(lemmatizer.forms.entries()),
-    formLabels: Array.from(lemmatizer.formLabels.entries())
+    formLabels: Array.from(lemmatizer.formLabels.entries()),
+    patterns: lemmatizer.patterns.toJSON()
   };
   const tokData = {
     key: 'tokenizer',
     lemmaContexts: Array.from(tokenizer.lemmaContexts.entries()).map(([lemma, typeMap]) => ({
-      lemma,
-      types: Array.from(typeMap.entries()).map(([type, contexts]) => ({ type, contexts }))
+      lemma, types: Array.from(typeMap.entries()).map(([type, contexts]) => ({ type, contexts }))
     })),
     sentenceCount: tokenizer.sentenceCount
   };
@@ -690,54 +651,45 @@ async function saveAll() {
     const tx = db.transaction(['lemmatizer', 'tokenizer'], 'readwrite');
     tx.objectStore('lemmatizer').put(lemData);
     tx.objectStore('tokenizer').put(tokData);
-    tx.oncomplete = () => {
-      updateStats();
-      resolve();
-    };
+    tx.oncomplete = () => { updateStats(); resolve(); };
   });
 }
 
 async function loadAll() {
-  if (!db) {
-    lemmatizer = new Lemmatizer();
-    tokenizer = new ContextTokenizer(lemmatizer);
-    return;
-  }
   lemmatizer = new Lemmatizer();
   tokenizer = new ContextTokenizer(lemmatizer);
+  if (!db) return;
   return new Promise((resolve) => {
     const tx = db.transaction(['lemmatizer', 'tokenizer'], 'readonly');
     const lemReq = tx.objectStore('lemmatizer').get('lemmatizer');
     lemReq.onsuccess = () => {
       if (lemReq.result) {
-        lemmatizer.lemmas = new Map(lemReq.result.lemmas);
-        lemmatizer.forms = new Map(lemReq.result.forms);
-        lemmatizer.formLabels = new Map(lemReq.result.formLabels || []);
+        const r = lemReq.result;
+        lemmatizer.lemmas = new Map((r.lemmas || []).map(([k, v]) => [k, new Set(v)]));
+        lemmatizer.forms = new Map(r.forms || []);
+        lemmatizer.formLabels = new Map(r.formLabels || []);
+        lemmatizer.patterns.fromJSON(r.patterns || []);
       }
     };
     const tokReq = tx.objectStore('tokenizer').get('tokenizer');
     tokReq.onsuccess = () => {
       if (tokReq.result) {
         const data = tokReq.result;
-        data.lemmaContexts.forEach(({ lemma, types }) => {
+        (data.lemmaContexts || []).forEach(({ lemma, types }) => {
           const typeMap = new Map();
-          types.forEach(({ type, contexts }) => {
-            typeMap.set(type, contexts);
-          });
+          types.forEach(({ type, contexts }) => typeMap.set(type, contexts));
           tokenizer.lemmaContexts.set(lemma, typeMap);
         });
         tokenizer.sentenceCount = data.sentenceCount || 0;
       }
       updateStats();
-      renderLemmaList();
       resolve();
     };
   });
 }
 
-// ===== UI STATE =====
-let currentTokens = [];
-let selectedWordIndices = new Set();
+// ===== TEACH TAB STATE =====
+let teachWords = []; // [{value, type, base, grammar}]
 
 function switchTab(e, tabId) {
   document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
@@ -746,117 +698,138 @@ function switchTab(e, tabId) {
   e.target.classList.add('active');
 }
 
-function teachLemma() {
-  const sf = document.getElementById('surfaceForm').value.trim().toLowerCase();
-  const l = document.getElementById('lemmaForm').value.trim().toLowerCase();
-  const fl = document.getElementById('formLabel').value.trim();
-  if (!sf || !l) return alert('Enter both forms');
-  lemmatizer.teach(sf, l, fl);
-  saveAll();
-  document.getElementById('surfaceForm').value = '';
-  document.getElementById('lemmaForm').value = '';
-  document.getElementById('formLabel').value = '';
-  renderLemmaList();
-}
-
-function renderLemmaList() {
-  const container = document.getElementById('lemmaList');
-  const lemmas = lemmatizer.getAllLemmas();
-  if (lemmas.length === 0) {
-    container.innerHTML = '<div class="empty-state">No lemmas yet</div>';
-    return;
-  }
-  container.innerHTML = lemmas.map(({ lemma, forms }) => `
-    <div class="lemma-family">
-      <div class="lemma-name">${lemma}</div>
-      <div class="form-list">
-        ${forms.map(f => `<span class="form-badge">${f.surface}${f.form ? ' <em>(' + f.form + ')</em>' : ''}</span>`).join('')}
-      </div>
-    </div>
-  `).join('');
-}
-
 function parseSentence() {
   const text = document.getElementById('teachSentence').value.trim();
-  if (!text) return alert('Paste a sentence');
+  if (!text) return alert('Enter a sentence');
   const words = text.split(/\s+/);
-  currentTokens = words.map(w => ({ value: w, type: null }));
-  selectedWordIndices.clear();
-  renderSentenceEditor();
+  teachWords = words.map(w => {
+    const resolved = lemmatizer.resolve(w);
+    return {
+      value: w,
+      type: '',
+      base: resolved.source === 'unknown' ? '' : resolved.base,
+      grammar: lemmatizer.getFormLabel(w) || '',
+      guessSource: resolved.source
+    };
+  });
+  renderWordRows();
 }
 
-function renderSentenceEditor() {
-  const editor = document.getElementById('sentenceEditor');
-  if (currentTokens.length === 0) {
-    editor.innerHTML = '<div class="empty-state" style="width: 100%;">Parse above</div>';
+function renderWordRows() {
+  const container = document.getElementById('wordRowList');
+  const btn = document.getElementById('learnSentenceBtn');
+  if (teachWords.length === 0) {
+    container.innerHTML = '<div class="empty-state">Break a sentence into words above</div>';
+    btn.disabled = true;
     return;
   }
-  editor.innerHTML = currentTokens.map((token, idx) => `
-    <span class="word-token ${selectedWordIndices.has(idx) ? 'selected' : ''} ${token.type ? 'tagged' : ''}"
-          onclick="toggleWordSelection(${idx})" title="${token.type || 'untagged'}">
-      ${token.value}${token.type ? ' (' + token.type + ')' : ''}
-    </span>
-  `).join('');
+  btn.disabled = false;
+  container.innerHTML = teachWords.map((w, idx) => {
+    const hint = (w.guessSource === 'learned-pattern' && !w.base)
+      ? `<span class="guess-hint" onclick="acceptGuess(${idx})">use pattern guess</span>` : '';
+    return `
+    <div class="word-row ${w.type && w.base ? 'complete' : ''}">
+      <div>
+        <div class="word-index">#${idx + 1}</div>
+        <div class="word-value">${w.value}</div>
+      </div>
+      <div class="field-col">
+        <select onchange="updateWordField(${idx}, 'type', this.value)">
+          <option value="">Type...</option>
+          <option value="person" ${w.type === 'person' ? 'selected' : ''}>Person</option>
+          <option value="action" ${w.type === 'action' ? 'selected' : ''}>Action</option>
+          <option value="location" ${w.type === 'location' ? 'selected' : ''}>Location</option>
+          <option value="object" ${w.type === 'object' ? 'selected' : ''}>Object</option>
+          <option value="modifier" ${w.type === 'modifier' ? 'selected' : ''}>Modifier</option>
+        </select>
+      </div>
+      <div class="field-col">
+        <input type="text" placeholder="Base form" value="${w.base}" oninput="updateWordField(${idx}, 'base', this.value)">
+        ${hint}
+      </div>
+      <div class="field-col">
+        <input type="text" placeholder="Grammar form (blank = name)" value="${w.grammar}" oninput="updateWordField(${idx}, 'grammar', this.value)">
+      </div>
+      <div class="row-status">${w.type && w.base ? '✓' : ''}</div>
+    </div>
+  `;
+  }).join('');
 }
 
-function toggleWordSelection(idx) {
-  if (selectedWordIndices.has(idx)) {
-    selectedWordIndices.delete(idx);
-  } else {
-    selectedWordIndices.add(idx);
-  }
-  renderSentenceEditor();
+function updateWordField(idx, field, value) {
+  teachWords[idx][field] = value;
+  if (field === 'base') renderWordRows(); // refresh completeness/hint state without losing focus badly
 }
 
-function applyType() {
-  const type = document.getElementById('typeSelect').value;
-  if (!type || selectedWordIndices.size === 0) return alert('Select type and words');
-  selectedWordIndices.forEach(idx => {
-    currentTokens[idx].type = type;
-  });
-  selectedWordIndices.clear();
-  renderSentenceEditor();
-  document.getElementById('typeSelect').value = '';
+function acceptGuess(idx) {
+  const resolved = lemmatizer.resolve(teachWords[idx].value);
+  teachWords[idx].base = resolved.base;
+  renderWordRows();
 }
 
 function learnSentence() {
-  if (currentTokens.filter(t => t.type).length === 0) return alert('Tag at least one word');
-  tokenizer.learnSentence(currentTokens);
+  const taggedCount = teachWords.filter(w => w.type && w.base).length;
+  if (taggedCount === 0) return alert('Set at least one word\'s Type and Base form');
+
+  // Teach lemma/pattern for every word that has a base form filled in
+  teachWords.forEach(w => {
+    if (w.base) {
+      lemmatizer.teach(w.value, w.base, w.grammar);
+    }
+  });
+
+  // Learn sentence context using the (possibly just-taught) base forms, preserving order
+  const tokensForContext = teachWords.map(w => ({
+    value: w.value,
+    type: w.type || null,
+    base: w.base ? w.base.toLowerCase() : lemmatizer.getLemma(w.value)
+  }));
+  tokenizer.learnSentence(tokensForContext);
+
   saveAll();
   document.getElementById('teachSentence').value = '';
-  currentTokens = [];
-  selectedWordIndices.clear();
-  document.getElementById('sentenceEditor').innerHTML = '<div class="empty-state" style="width: 100%;">Parse a sentence above</div>';
+  teachWords = [];
+  renderWordRows();
 }
 
+function clearTeach() {
+  document.getElementById('teachSentence').value = '';
+  teachWords = [];
+  renderWordRows();
+}
+
+// ===== TEST TOKENIZE =====
 function tokenizeTest() {
   const text = document.getElementById('testSentence').value.trim();
-  if (!text) return alert('Paste a sentence');
+  if (!text) return alert('Enter a sentence');
   const words = text.split(/\s+/);
-  const tokens = [];
-  words.forEach((word, idx) => {
-    const before = words.slice(Math.max(0, idx - 2), idx).map(w => {
-      const l = lemmatizer.getLemma(w);
-      if (tokenizer.lemmaContexts.has(l)) {
-        const types = Array.from(tokenizer.lemmaContexts.get(l).keys());
-        return l + '/' + (types[0] || 'unk');
-      }
-      return l + '/unk';
-    });
-    const after = words.slice(idx + 1, Math.min(words.length, idx + 3)).map(w => {
-      const l = lemmatizer.getLemma(w);
-      if (tokenizer.lemmaContexts.has(l)) {
-        const types = Array.from(tokenizer.lemmaContexts.get(l).keys());
-        return l + '/' + (types[0] || 'unk');
-      }
-      return l + '/unk';
-    });
-    const classified = tokenizer.classifyWord(word, { before, after });
-    const lemma = lemmatizer.getLemma(word);
-    const formLabel = lemmatizer.getFormLabel(word);
-    tokens.push({ word, ...classified, lemma, formLabel });
+
+  const resolved = words.map(w => lemmatizer.resolve(w));
+
+  const tokens = words.map((word, idx) => {
+    const before = words.slice(Math.max(0, idx - 2), idx).map((w, i) => resolved[Math.max(0, idx - 2) + i].base + '/' + typeGuessFor(resolved[Math.max(0, idx - 2) + i].base));
+    const after = words.slice(idx + 1, Math.min(words.length, idx + 3)).map((w, i) => resolved[idx + 1 + i].base + '/' + typeGuessFor(resolved[idx + 1 + i].base));
+    const base = resolved[idx].base;
+    const classified = tokenizer.classifyWord(base, { before, after });
+    const grammar = lemmatizer.getFormLabel(word);
+    return {
+      word,
+      base,
+      type: classified.type,
+      confidence: classified.confidence,
+      grammar,
+      baseSource: resolved[idx].source
+    };
   });
   renderTokenOutput(tokens);
+}
+
+function typeGuessFor(lemma) {
+  if (tokenizer.lemmaContexts.has(lemma)) {
+    const types = Array.from(tokenizer.lemmaContexts.get(lemma).keys());
+    return types[0] || 'unk';
+  }
+  return 'unk';
 }
 
 function renderTokenOutput(tokens) {
@@ -864,19 +837,13 @@ function renderTokenOutput(tokens) {
   output.innerHTML = tokens.map(t => `
     <div class="token">
       <span class="word">${t.word}</span>
-      <span class="type">${t.type}</span>
-      <span class="lemma">${t.lemma}</span>
-      ${t.formLabel ? `<span class="lemma">${t.formLabel}</span>` : ''}
-      <span class="conf">${(t.confidence * 100).toFixed(0)}%</span>
+      <span class="type">type: ${t.type}</span>
+      <span class="base">base: ${t.base}</span>
+      ${t.grammar ? `<span class="gform">form: ${t.grammar}</span>` : ''}
+      <span class="conf">type conf ${(t.confidence * 100).toFixed(0)}%</span>
+      <span class="src">${t.baseSource}</span>
     </div>
   `).join('');
-}
-
-function clearTeach() {
-  document.getElementById('teachSentence').value = '';
-  currentTokens = [];
-  selectedWordIndices.clear();
-  document.getElementById('sentenceEditor').innerHTML = '<div class="empty-state" style="width: 100%;">Parse above</div>';
 }
 
 function clearTest() {
@@ -884,6 +851,7 @@ function clearTest() {
   document.getElementById('tokenOutput').innerHTML = '<div class="empty-state" style="width: 100%;">Tokenize above</div>';
 }
 
+// ===== SEARCH =====
 function performSearch() {
   const query = document.getElementById('searchInput').value.trim().toLowerCase();
   if (!query) {
@@ -905,7 +873,7 @@ function performSearch() {
     <div class="search-result" onclick="showLemmaDetails('${lemma}')">
       <div class="result-lemma">${lemma}</div>
       <div class="result-forms">${forms.map(f => f.surface + (f.form ? ' (' + f.form + ')' : '')).join(', ')}</div>
-      ${tokenizer.lemmaContexts.has(lemma) ? `<div class="result-contexts">${tokenizer.lemmaContexts.get(lemma).size} types</div>` : ''}
+      ${tokenizer.lemmaContexts.has(lemma) ? `<div class="result-contexts">${tokenizer.lemmaContexts.get(lemma).size} types learned</div>` : ''}
     </div>
   `).join('');
 }
@@ -937,6 +905,7 @@ function updateStats() {
   document.getElementById('lemmaCount').textContent = lemmatizer.lemmas.size;
   const stats = tokenizer.getStats();
   document.getElementById('contextCount').textContent = stats.contexts;
+  document.getElementById('patternCount').textContent = lemmatizer.patterns.size();
 }
 
 initDB();
