@@ -5,278 +5,520 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Pistol: Context + Lemma Learning</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-html,body{width:100%;height:100%;font-family:'Georgia', serif}
-body{background:#fafaf7;color:#2c2c2c;display:flex;flex-direction:column;overflow:hidden}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 100%; height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+body { 
+  background: #1a1a1a; 
+  color: #e0e0e0; 
+  display: flex; 
+  flex-direction: column; 
+  overflow: hidden;
+}
 
-header{padding:1.5rem 2rem;border-bottom:1px solid #e0dcd5;background:#fff;flex-shrink:0}
-.header-left h1{font-size:1.8rem;font-weight:400;letter-spacing:-0.02em}
-.subtitle{font-size:0.9rem;color:#8b8b7f;margin-top:0.2rem}
+/* HEADER */
+header {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #333;
+  background: #0d0d0d;
+  flex-shrink: 0;
+}
+header h1 {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #fff;
+  margin: 0;
+}
+header p {
+  font-size: 0.85rem;
+  color: #999;
+  margin: 0.3rem 0 0 0;
+}
 
-.tabs-main{display:flex;gap:1rem;border-bottom:1px solid #e0dcd5;padding:1rem 2rem;background:#fff;flex-shrink:0}
-.tab-main{padding:0.5rem 1rem;background:0;border:0;cursor:pointer;font-family:inherit;font-size:0.95rem;color:#8b8b7f;border-bottom:2px solid transparent}
-.tab-main.active{color:#2c2c2c;border-bottom-color:#2c2c2c}
+/* TABS */
+.tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid #333;
+  background: #0d0d0d;
+  padding: 0 1.5rem;
+  flex-shrink: 0;
+}
+.tab-btn {
+  padding: 0.8rem 1rem;
+  background: none;
+  border: none;
+  color: #999;
+  cursor: pointer;
+  font-size: 0.9rem;
+  border-bottom: 2px solid transparent;
+  transition: color 0.2s;
+}
+.tab-btn:hover { color: #ccc; }
+.tab-btn.active {
+  color: #fff;
+  border-bottom-color: #4a9eff;
+}
 
-.workspace{display:flex;flex:1;overflow:hidden;gap:0}
-.stage{display:flex;flex-direction:column;flex:1;border-right:1px solid #e0dcd5;overflow:hidden;min-width:300px}
-.stage:last-child{border-right:none}
+/* MAIN LAYOUT */
+.container {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  gap: 0;
+}
 
-.stage-header{padding:1rem 1.5rem;background:#f5f3f0;border-bottom:1px solid #e0dcd5;flex-shrink:0}
-.stage-num{font-size:0.75rem;letter-spacing:0.1em;color:#999;text-transform:uppercase;font-weight:600}
-.stage-title{font-size:1.1rem;font-weight:400;margin-top:0.3rem}
+.panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #333;
+  min-width: 0;
+  overflow: hidden;
+}
+.panel:last-child { border-right: none; }
 
-.stage-content{flex:1;overflow-y:auto;padding:1.5rem;display:flex;flex-direction:column;gap:1rem}
-.stage-content::-webkit-scrollbar{width:6px}
-.stage-content::-webkit-scrollbar-thumb{background:#d4cfc5}
+.panel-header {
+  padding: 1rem 1.5rem;
+  background: #1a1a1a;
+  border-bottom: 1px solid #333;
+  flex-shrink: 0;
+}
+.panel-header-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #fff;
+  margin: 0;
+}
+.panel-header-subtitle {
+  font-size: 0.75rem;
+  color: #666;
+  margin: 0.3rem 0 0 0;
+}
 
-.input-zone{background:#fff;border:1px solid #e0dcd5;padding:1rem;border-radius:2px}
-.input-zone h3{font-size:0.75rem;color:#999;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.6rem;font-weight:600}
+.panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
 
-textarea,input[type="text"],select{width:100%;padding:0.6rem;border:1px solid #e0dcd5;border-radius:2px;font-family:inherit;font-size:0.9rem;background:#fff;color:#2c2c2c;margin-bottom:0.6rem}
-textarea{font-family:'Monaco','Menlo',monospace;font-size:0.8rem;min-height:80px;line-height:1.5;resize:none}
-textarea:focus,input:focus{outline:0;border-color:#2c2c2c;background:#fffbf7}
+/* SECTIONS */
+.section {
+  background: #0d0d0d;
+  border: 1px solid #333;
+  border-radius: 4px;
+  padding: 1rem;
+}
+.section-title {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #666;
+  font-weight: 600;
+  margin-bottom: 0.8rem;
+}
 
-button{padding:0.6rem 1.2rem;background:#2c2c2c;color:#fff;border:none;border-radius:2px;cursor:pointer;font-size:0.85rem;font-weight:500}
-button:hover{background:#1a1a1a}
-button.secondary{background:#e0dcd5;color:#2c2c2c}
-button.secondary:hover{background:#d4cfc5}
+/* INPUTS */
+input[type="text"],
+textarea,
+select {
+  width: 100%;
+  padding: 0.6rem;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 3px;
+  color: #e0e0e0;
+  font-family: inherit;
+  font-size: 0.9rem;
+  margin-bottom: 0.6rem;
+  transition: border 0.2s;
+}
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: #4a9eff;
+  background: #111;
+}
 
-.guide-box{background:#fffbf7;border:1px solid #d4a574;border-left:3px solid #d4a574;padding:0.8rem;border-radius:2px;margin-bottom:1rem;font-size:0.85rem;line-height:1.5}
+textarea {
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 0.85rem;
+  min-height: 60px;
+  resize: vertical;
+  line-height: 1.5;
+}
 
-.sentence-editor{background:#fff;border:1px solid #e0dcd5;padding:1rem;border-radius:2px;line-height:2}
-.word-token{display:inline-block;padding:0.3rem 0.5rem;margin:0.2rem;border-radius:3px;cursor:pointer;border:1px solid #e0dcd5;background:#fff;transition:all 0.15s}
-.word-token:hover{background:#fffbf7;border-color:#2c2c2c}
-.word-token.selected{background:#d4a574;color:#fff;border-color:#d4a574}
-.word-token.tagged{border:2px solid #8b7355;font-weight:600}
+/* BUTTONS */
+button {
+  padding: 0.6rem 1rem;
+  background: #4a9eff;
+  color: #fff;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+button:hover { background: #2e7fd4; }
+button:active { background: #1f5ba0; }
 
-.context-view{background:#fffbf7;border:1px solid #e0dcd5;padding:1rem;border-radius:2px;overflow-y:auto;flex:1;font-size:0.85rem}
-.context-item{padding:0.6rem;background:#fff;margin-bottom:0.4rem;border-left:3px solid #8b7355;border-radius:2px}
+.btn-secondary {
+  background: #333;
+  color: #e0e0e0;
+}
+.btn-secondary:hover { background: #444; }
 
-.token-display{background:#fffbf7;border:1px solid #e0dcd5;padding:1rem;border-radius:2px;min-height:60px}
-.token-display .label{font-size:0.75rem;color:#999;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.6rem;font-weight:600}
-.token-list{display:flex;flex-wrap:wrap;gap:0.4rem}
-.token{display:inline-flex;align-items:center;gap:0.3rem;padding:0.4rem 0.7rem;background:#fff;border:1px solid #d4cfc5;border-radius:14px;font-size:0.75rem;font-family:'Monaco',monospace}
-.token .value{font-weight:600}
-.token .type{color:#8b7355}
-.token .conf{font-size:0.65rem;color:#999}
+.button-row {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
 
-.empty-state{color:#999;font-style:italic;text-align:center;padding:1rem}
+/* STATS BOX */
+.stats-box {
+  background: #0a3d66;
+  border-left: 3px solid #4a9eff;
+  padding: 0.8rem;
+  border-radius: 3px;
+  font-size: 0.85rem;
+  color: #b3d9ff;
+  margin-bottom: 0.5rem;
+}
 
-.storage-status{background:#fffbf7;border:1px solid #d4a574;border-left:3px solid #d4a574;padding:0.8rem;border-radius:2px;font-size:0.8rem;margin-bottom:1rem}
+/* WORD TOKENS */
+.word-tokens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  background: #1a1a1a;
+  padding: 1rem;
+  border: 1px solid #333;
+  border-radius: 3px;
+  min-height: 60px;
+  align-content: flex-start;
+}
 
-.search-result{padding:0.8rem;background:#fff;border-left:3px solid #8b7355;margin-bottom:0.6rem;border-radius:2px;cursor:pointer}
-.search-result:hover{background:#fffbf7}
-.result-lemma{font-weight:600;font-family:'Monaco',monospace;color:#2c2c2c}
-.result-forms{font-size:0.75rem;color:#8b8b7f;margin-top:0.3rem}
-.result-contexts{font-size:0.75rem;color:#8b7355;margin-top:0.2rem}
+.word-token {
+  padding: 0.4rem 0.8rem;
+  background: #2a2a2a;
+  border: 1px solid #444;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-size: 0.85rem;
+  color: #e0e0e0;
+  user-select: none;
+}
+.word-token:hover {
+  border-color: #4a9eff;
+  background: #1a1a1a;
+}
+.word-token.selected {
+  background: #4a9eff;
+  color: #fff;
+  border-color: #4a9eff;
+  font-weight: 600;
+}
+.word-token.tagged {
+  border-color: #4a9eff;
+  color: #4a9eff;
+  font-weight: 600;
+}
 
-.lemma-family{padding:1rem;background:#fff;border:1px solid #d4cfc5;border-radius:2px;margin-bottom:1rem}
-.lemma-header{font-weight:600;font-family:'Monaco',monospace;color:#2c2c2c;margin-bottom:0.6rem;font-size:1rem}
-.form-list{display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.8rem}
-.form-badge{padding:0.3rem 0.6rem;background:#fffbf7;border:1px solid #d4cfc5;border-radius:3px;font-size:0.8rem;font-family:'Monaco',monospace}
+/* LEMMA FAMILY */
+.lemma-family {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  padding: 0.8rem;
+  border-radius: 3px;
+  margin-bottom: 0.8rem;
+}
+.lemma-name {
+  font-family: 'Monaco', monospace;
+  font-weight: 600;
+  color: #4a9eff;
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+}
+.form-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.form-badge {
+  padding: 0.3rem 0.6rem;
+  background: #2a2a2a;
+  border: 1px solid #444;
+  border-radius: 3px;
+  font-size: 0.75rem;
+  font-family: 'Monaco', monospace;
+  color: #b3d9ff;
+}
 
-.tab-pane{display:none}
-.tab-pane.active{display:block}
+/* TOKEN OUTPUT */
+.token-display {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  padding: 1rem;
+  border-radius: 3px;
+  min-height: 60px;
+  align-content: flex-start;
+}
 
-@media (max-width:1200px) {
-  .workspace{flex-direction:column}
-  .stage{border-right:none;border-bottom:1px solid #e0dcd5;min-height:350px}
+.token {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.7rem;
+  background: #2a2a2a;
+  border: 1px solid #444;
+  border-radius: 14px;
+  font-size: 0.75rem;
+  font-family: 'Monaco', monospace;
+}
+.token .word { color: #fff; font-weight: 600; }
+.token .type { color: #4a9eff; }
+.token .lemma { color: #999; font-size: 0.7rem; }
+.token .conf { color: #666; font-size: 0.65rem; }
+
+/* SEARCH RESULTS */
+.search-result {
+  background: #1a1a1a;
+  border-left: 3px solid #4a9eff;
+  padding: 0.8rem;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-bottom: 0.6rem;
+}
+.search-result:hover { background: #222; }
+.result-lemma {
+  font-family: 'Monaco', monospace;
+  font-weight: 600;
+  color: #4a9eff;
+  font-size: 0.95rem;
+  margin-bottom: 0.3rem;
+}
+.result-forms,
+.result-contexts {
+  font-size: 0.75rem;
+  color: #999;
+  margin-top: 0.2rem;
+}
+
+/* EMPTY STATE */
+.empty-state {
+  color: #666;
+  font-style: italic;
+  text-align: center;
+  padding: 2rem 1rem;
+}
+
+/* TAB PANES */
+.tab-pane {
+  display: none;
+  flex: 1;
+  overflow: hidden;
+}
+.tab-pane.active {
+  display: flex;
+}
+
+/* RESPONSIVE */
+@media (max-width: 1024px) {
+  .container {
+    flex-direction: column;
+  }
+  .panel {
+    border-right: none;
+    border-bottom: 1px solid #333;
+    min-height: 300px;
+  }
+  .panel:last-child { border-bottom: none; }
+}
+
+@media (max-width: 640px) {
+  header { padding: 0.8rem 1rem; }
+  header h1 { font-size: 1.1rem; }
+  .panel-body { padding: 0.8rem 1rem; }
+  .tabs { padding: 0 1rem; }
+  .tab-btn { padding: 0.6rem 0.8rem; font-size: 0.8rem; }
+  button { padding: 0.5rem 0.8rem; font-size: 0.8rem; }
 }
 </style>
 </head>
 <body>
 
 <header>
-<div class="header-left">
-<h1>Pistol: Context + Lemma Learning</h1>
-<p class="subtitle">Learn word lemmas, contexts, and search by base form.</p>
-</div>
+  <h1>Pistol</h1>
+  <p>Context-based lemma learning</p>
 </header>
 
-<div class="tabs-main">
-<button class="tab-main active" onclick="switchMainTab('train')">Train</button>
-<button class="tab-main" onclick="switchMainTab('search')">Search Lemmas</button>
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab(event, 'train')">Train</button>
+  <button class="tab-btn" onclick="switchTab(event, 'search')">Search</button>
 </div>
 
 <!-- TRAIN TAB -->
-<div id="train" class="tab-pane active" style="flex:1;display:flex;flex-direction:column;overflow:hidden">
-<div class="workspace">
+<div id="train" class="tab-pane active">
+  <div class="container">
 
-<!-- STAGE 1: TEACH LEMMAS -->
-<div class="stage" id="stage1">
-<div class="stage-header">
-<div class="stage-num">Stage 1: Lemmatize</div>
-<div class="stage-title">Teach word forms & base forms</div>
-</div>
-<div class="stage-content">
+    <!-- PANEL 1: TEACH LEMMAS -->
+    <div class="panel">
+      <div class="panel-header">
+        <h3 class="panel-header-title">Teach Lemmas</h3>
+        <p class="panel-header-subtitle">running → run, saw → see</p>
+      </div>
+      <div class="panel-body">
+        
+        <div class="stats-box" id="statsBox">
+          Lemmas: <strong id="lemmaCount">0</strong> | Contexts: <strong id="contextCount">0</strong>
+        </div>
 
-<div class="storage-status">
-✓ Persisted | Lemmas: <span id="lemmaCount">0</span> | Contexts: <span id="contextCount">0</span>
-</div>
+        <div class="section">
+          <div class="section-title">Add Lemma Pair</div>
+          <input type="text" id="surfaceForm" placeholder="Surface form (e.g., running)">
+          <input type="text" id="lemmaForm" placeholder="Lemma (e.g., run)">
+          <button onclick="teachLemma()">Add Pair</button>
+        </div>
 
-<div class="guide-box">
-<strong>Learn lemmas:</strong> "running" → "run", "saw" → "see", "walks" → "walk". The system pools contexts across all forms of a lemma.
-</div>
+        <div class="section" style="flex: 1; overflow-y: auto;">
+          <div class="section-title">Learned Lemmas</div>
+          <div id="lemmaList">
+            <div class="empty-state">No lemmas yet</div>
+          </div>
+        </div>
 
-<div class="input-zone">
-<h3>Teach a Word Form</h3>
-<label style="display:block;font-size:0.8rem;color:#8b7355;margin-bottom:0.3rem;font-weight:600">Surface form (e.g., "running")</label>
-<input type="text" id="surfaceForm" placeholder="e.g., running">
-<label style="display:block;font-size:0.8rem;color:#8b7355;margin-bottom:0.3rem;font-weight:600">Lemma (base form, e.g., "run")</label>
-<input type="text" id="lemmaForm" placeholder="e.g., run">
-<div style="display:flex;gap:0.6rem;flex-wrap:wrap">
-<button onclick="teachLemma()">Add Lemma Pair</button>
-</div>
-</div>
+      </div>
+    </div>
 
-<div class="context-view">
-<div class="label">Learned Lemmas</div>
-<div id="lemmaList">
-<div class="empty-state">No lemmas yet</div>
-</div>
-</div>
+    <!-- PANEL 2: TEACH CONTEXT -->
+    <div class="panel">
+      <div class="panel-header">
+        <h3 class="panel-header-title">Teach Context</h3>
+        <p class="panel-header-subtitle">Tag words in sentences</p>
+      </div>
+      <div class="panel-body">
 
-</div>
-</div>
+        <div class="section">
+          <div class="section-title">Paste Sentence</div>
+          <textarea id="teachSentence" placeholder="E.g., Sarah walked into the office"></textarea>
+          <div class="button-row">
+            <button onclick="parseSentence()">Parse</button>
+            <button class="btn-secondary" onclick="clearTeach()">Clear</button>
+          </div>
+        </div>
 
-<!-- STAGE 2: TEACH CONTEXTS -->
-<div class="stage" id="stage2">
-<div class="stage-header">
-<div class="stage-num">Stage 2: Teach Context</div>
-<div class="stage-title">Label words in sentences</div>
-</div>
-<div class="stage-content">
+        <div class="section">
+          <div class="section-title">Click Words to Select</div>
+          <div class="word-tokens" id="sentenceEditor">
+            <div class="empty-state" style="width: 100%;">Parse above</div>
+          </div>
+        </div>
 
-<div class="guide-box">
-<strong>Sentences:</strong> Paste a sentence, tag words by type. The system learns contexts at the lemma level.
-</div>
+        <div class="section">
+          <div class="section-title">Tag Selected Words</div>
+          <select id="typeSelect">
+            <option value="">Choose type...</option>
+            <option value="person">Person</option>
+            <option value="action">Action</option>
+            <option value="location">Location</option>
+            <option value="object">Object</option>
+            <option value="modifier">Modifier</option>
+          </select>
+          <div class="button-row">
+            <button onclick="applyType()">Tag</button>
+            <button class="btn-secondary" onclick="learnSentence()">Learn Sentence</button>
+          </div>
+        </div>
 
-<div class="input-zone">
-<h3>Example Sentence</h3>
-<textarea id="teachSentence" placeholder='e.g., "Sarah walked into the office"'></textarea>
-<div style="display:flex;gap:0.6rem;flex-wrap:wrap">
-<button onclick="parseSentence()">Parse</button>
-<button class="secondary" onclick="clearTeach()">Clear</button>
-</div>
-</div>
+      </div>
+    </div>
 
-<div class="input-zone">
-<h3>Click words to tag</h3>
-<div id="sentenceEditor" class="sentence-editor">
-<div class="empty-state">Parse a sentence above</div>
-</div>
-</div>
+    <!-- PANEL 3: TOKENIZE -->
+    <div class="panel">
+      <div class="panel-header">
+        <h3 class="panel-header-title">Test Tokenize</h3>
+        <p class="panel-header-subtitle">Predict on new text</p>
+      </div>
+      <div class="panel-body">
 
-<div class="input-zone">
-<h3>Type for selected words</h3>
-<select id="typeSelect">
-<option value="">Select type</option>
-<option value="person">Person</option>
-<option value="action">Action</option>
-<option value="location">Location</option>
-<option value="object">Object</option>
-<option value="modifier">Modifier</option>
-</select>
-<div style="display:flex;gap:0.6rem;flex-wrap:wrap;margin-top:0.6rem">
-<button onclick="applyType()">Tag Selected</button>
-<button class="secondary" onclick="learnSentence()">Learn Sentence</button>
-</div>
-</div>
+        <div class="section">
+          <div class="section-title">New Sentence</div>
+          <textarea id="testSentence" placeholder="E.g., Marcus was running"></textarea>
+          <div class="button-row">
+            <button onclick="tokenizeTest()">Tokenize</button>
+            <button class="btn-secondary" onclick="clearTest()">Clear</button>
+          </div>
+        </div>
 
-</div>
-</div>
+        <div class="section" style="flex: 1; overflow-y: auto;">
+          <div class="section-title">Results</div>
+          <div class="token-display" id="tokenOutput">
+            <div class="empty-state" style="width: 100%;">Tokenize above</div>
+          </div>
+        </div>
 
-<!-- STAGE 3: TOKENIZE -->
-<div class="stage" id="stage3">
-<div class="stage-header">
-<div class="stage-num">Stage 3: Tokenize</div>
-<div class="stage-title">Test on new sentences</div>
-</div>
-<div class="stage-content">
+      </div>
+    </div>
 
-<div class="guide-box">
-<strong>Classify words</strong> using learned lemma contexts.
-</div>
-
-<div class="input-zone">
-<h3>New Sentence</h3>
-<textarea id="testSentence" placeholder='Try: "Marcus was running"'></textarea>
-<div style="display:flex;gap:0.6rem;flex-wrap:wrap">
-<button onclick="tokenizeTest()">Tokenize</button>
-<button class="secondary" onclick="clearTest()">Clear</button>
-</div>
-</div>
-
-<div class="token-display flex-grow">
-<div class="label">Predicted Tokens (with lemmas)</div>
-<div id="tokenOutput" class="token-list">
-<div class="empty-state">Tokenize above</div>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
+  </div>
 </div>
 
 <!-- SEARCH TAB -->
-<div id="search" class="tab-pane" style="flex:1;display:flex;flex-direction:column;overflow:hidden">
-<div class="workspace">
+<div id="search" class="tab-pane">
+  <div class="container">
 
-<div class="stage">
-<div class="stage-header">
-<div class="stage-num">Lemma Search Engine</div>
-<div class="stage-title">Find by base form</div>
-</div>
-<div class="stage-content">
+    <div class="panel">
+      <div class="panel-header">
+        <h3 class="panel-header-title">Search Lemmas</h3>
+        <p class="panel-header-subtitle">Find by base form</p>
+      </div>
+      <div class="panel-body">
+        <div class="section">
+          <input type="text" id="searchInput" placeholder="Search (e.g., run, walk, see)" onkeyup="performSearch()">
+        </div>
+        <div class="section" style="flex: 1; overflow-y: auto;">
+          <div id="searchResults">
+            <div class="empty-state">Search above</div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-<div class="input-zone">
-<h3>Search by Lemma</h3>
-<input type="text" id="searchInput" placeholder="e.g., walk, see, run" onkeyup="performSearch()">
-</div>
+    <div class="panel">
+      <div class="panel-header">
+        <h3 class="panel-header-title">Lemma Details</h3>
+        <p class="panel-header-subtitle">Browse & contexts</p>
+      </div>
+      <div class="panel-body">
+        <div id="lemmaDetails">
+          <div class="empty-state">Select a lemma</div>
+        </div>
+      </div>
+    </div>
 
-<div class="context-view">
-<div class="label">Results</div>
-<div id="searchResults">
-<div class="empty-state">Search above</div>
-</div>
-</div>
-
-</div>
-</div>
-
-<div class="stage" style="flex:1.5">
-<div class="stage-header">
-<div class="stage-num">Lemma Details</div>
-<div class="stage-title">Browse family & contexts</div>
-</div>
-<div class="stage-content">
-
-<div id="lemmaDetails">
-<div class="empty-state">Select a lemma</div>
-</div>
-
-</div>
-</div>
-
-</div>
-</div>
-
+  </div>
 </div>
 
 <script>
 // ===== LEMMATIZER =====
 class Lemmatizer {
   constructor() {
-    this.lemmas = new Map(); // lemma -> Set of surface forms
-    this.forms = new Map();  // surface form -> lemma
+    this.lemmas = new Map();
+    this.forms = new Map();
   }
 
   teach(surfaceForm, lemma) {
     const sf = surfaceForm.toLowerCase();
     const l = lemma.toLowerCase();
-    
     if (!this.lemmas.has(l)) {
       this.lemmas.set(l, new Set());
     }
@@ -289,13 +531,10 @@ class Lemmatizer {
     if (this.forms.has(lower)) {
       return this.forms.get(lower);
     }
-    
-    // Heuristic fallback: try common suffixes
     if (lower.endsWith('ing')) return lower.slice(0, -3);
     if (lower.endsWith('ed')) return lower.slice(0, -2);
     if (lower.endsWith('s') && !lower.endsWith('ss')) return lower.slice(0, -1);
-    
-    return lower; // assume it's already a lemma
+    return lower;
   }
 
   getAllLemmas() {
@@ -310,35 +549,26 @@ class Lemmatizer {
   }
 }
 
-// ===== CONTEXT TOKENIZER WITH LEMMAS =====
+// ===== CONTEXT TOKENIZER =====
 class ContextTokenizer {
   constructor(lemmatizer) {
     this.lemmatizer = lemmatizer;
-    // lemma -> Map<type -> Array<contexts>>
     this.lemmaContexts = new Map();
     this.sentenceCount = 0;
   }
 
   learnSentence(tokens) {
-    // tokens = [{value, type}, ...]
     this.sentenceCount++;
-    
     tokens.forEach((token, idx) => {
       if (!token.type) return;
-      
-      // Get lemma for this token
       const lemma = this.lemmatizer.getLemma(token.value);
-      
-      // Build context using lemmas of neighbors
       const before = tokens
         .slice(Math.max(0, idx - 2), idx)
         .map(t => this.lemmatizer.getLemma(t.value) + '/' + (t.type || 'unk'));
       const after = tokens
         .slice(idx + 1, Math.min(tokens.length, idx + 3))
         .map(t => this.lemmatizer.getLemma(t.value) + '/' + (t.type || 'unk'));
-      
       const context = { before, after };
-      
       if (!this.lemmaContexts.has(lemma)) {
         this.lemmaContexts.set(lemma, new Map());
       }
@@ -353,7 +583,6 @@ class ContextTokenizer {
   classifyWord(word, neighborLemmas) {
     const lemma = this.lemmatizer.getLemma(word);
     const scores = new Map();
-    
     if (this.lemmaContexts.has(lemma)) {
       const typeMap = this.lemmaContexts.get(lemma);
       typeMap.forEach((contexts, type) => {
@@ -371,9 +600,7 @@ class ContextTokenizer {
         scores.set(type, score / contexts.length);
       });
     }
-    
     if (scores.size === 0) return { type: 'unknown', confidence: 0 };
-    
     let best = { type: 'unknown', confidence: 0 };
     scores.forEach((score, type) => {
       if (score > best.confidence) {
@@ -400,11 +627,14 @@ let db, lemmatizer, tokenizer;
 async function initDB() {
   return new Promise((resolve) => {
     const req = indexedDB.open('PistolLemmaDB', 1);
-    req.onerror = () => resolve();
+    req.onerror = () => {
+      lemmatizer = new Lemmatizer();
+      tokenizer = new ContextTokenizer(lemmatizer);
+      resolve();
+    };
     req.onsuccess = () => {
       db = req.result;
-      loadAll();
-      resolve();
+      loadAll().then(resolve);
     };
     req.onupgradeneeded = (e) => {
       e.target.result.createObjectStore('lemmatizer', { keyPath: 'key' });
@@ -415,13 +645,11 @@ async function initDB() {
 
 async function saveAll() {
   if (!db) return;
-  
   const lemData = {
     key: 'lemmatizer',
     lemmas: Array.from(lemmatizer.lemmas.entries()),
     forms: Array.from(lemmatizer.forms.entries())
   };
-  
   const tokData = {
     key: 'tokenizer',
     lemmaContexts: Array.from(tokenizer.lemmaContexts.entries()).map(([lemma, typeMap]) => ({
@@ -430,7 +658,6 @@ async function saveAll() {
     })),
     sentenceCount: tokenizer.sentenceCount
   };
-  
   return new Promise((resolve) => {
     const tx = db.transaction(['lemmatizer', 'tokenizer'], 'readwrite');
     tx.objectStore('lemmatizer').put(lemData);
@@ -443,14 +670,15 @@ async function saveAll() {
 }
 
 async function loadAll() {
-  if (!db) return;
-  
+  if (!db) {
+    lemmatizer = new Lemmatizer();
+    tokenizer = new ContextTokenizer(lemmatizer);
+    return;
+  }
   lemmatizer = new Lemmatizer();
   tokenizer = new ContextTokenizer(lemmatizer);
-  
   return new Promise((resolve) => {
     const tx = db.transaction(['lemmatizer', 'tokenizer'], 'readonly');
-    
     const lemReq = tx.objectStore('lemmatizer').get('lemmatizer');
     lemReq.onsuccess = () => {
       if (lemReq.result) {
@@ -458,7 +686,6 @@ async function loadAll() {
         lemmatizer.forms = new Map(lemReq.result.forms);
       }
     };
-    
     const tokReq = tx.objectStore('tokenizer').get('tokenizer');
     tokReq.onsuccess = () => {
       if (tokReq.result) {
@@ -483,21 +710,19 @@ async function loadAll() {
 let currentTokens = [];
 let selectedWordIndices = new Set();
 
-function switchMainTab(tab) {
+function switchTab(e, tabId) {
   document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('.tab-main').forEach(el => el.classList.remove('active'));
-  document.getElementById(tab).classList.add('active');
-  event.target.classList.add('active');
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+  e.target.classList.add('active');
 }
 
 function teachLemma() {
   const sf = document.getElementById('surfaceForm').value.trim().toLowerCase();
   const l = document.getElementById('lemmaForm').value.trim().toLowerCase();
   if (!sf || !l) return alert('Enter both forms');
-  
   lemmatizer.teach(sf, l);
   saveAll();
-  
   document.getElementById('surfaceForm').value = '';
   document.getElementById('lemmaForm').value = '';
   renderLemmaList();
@@ -510,10 +735,9 @@ function renderLemmaList() {
     container.innerHTML = '<div class="empty-state">No lemmas yet</div>';
     return;
   }
-  
   container.innerHTML = lemmas.map(({ lemma, forms }) => `
     <div class="lemma-family">
-      <div class="lemma-header">${lemma}</div>
+      <div class="lemma-name">${lemma}</div>
       <div class="form-list">
         ${forms.map(f => `<span class="form-badge">${f}</span>`).join('')}
       </div>
@@ -524,22 +748,22 @@ function renderLemmaList() {
 function parseSentence() {
   const text = document.getElementById('teachSentence').value.trim();
   if (!text) return alert('Paste a sentence');
-  
   const words = text.split(/\s+/);
   currentTokens = words.map(w => ({ value: w, type: null }));
   selectedWordIndices.clear();
-  
   renderSentenceEditor();
 }
 
 function renderSentenceEditor() {
   const editor = document.getElementById('sentenceEditor');
+  if (currentTokens.length === 0) {
+    editor.innerHTML = '<div class="empty-state" style="width: 100%;">Parse above</div>';
+    return;
+  }
   editor.innerHTML = currentTokens.map((token, idx) => `
     <span class="word-token ${selectedWordIndices.has(idx) ? 'selected' : ''} ${token.type ? 'tagged' : ''}"
-          onclick="toggleWordSelection(${idx})"
-          style="${token.type ? `border-color:#8b7355; background:#f0e8e0; color:#2c2c2c; border-width:2px` : ''}">
-      ${token.value}
-      ${token.type ? `<small style="color:#8b7355;font-weight:600"> (${token.type})</small>` : ''}
+          onclick="toggleWordSelection(${idx})" title="${token.type || 'untagged'}">
+      ${token.value}${token.type ? ' (' + token.type + ')' : ''}
     </span>
   `).join('');
 }
@@ -556,38 +780,32 @@ function toggleWordSelection(idx) {
 function applyType() {
   const type = document.getElementById('typeSelect').value;
   if (!type || selectedWordIndices.size === 0) return alert('Select type and words');
-  
   selectedWordIndices.forEach(idx => {
     currentTokens[idx].type = type;
   });
-  
+  selectedWordIndices.clear();
   renderSentenceEditor();
   document.getElementById('typeSelect').value = '';
 }
 
 function learnSentence() {
   if (currentTokens.filter(t => t.type).length === 0) return alert('Tag at least one word');
-  
   tokenizer.learnSentence(currentTokens);
   saveAll();
-  
   document.getElementById('teachSentence').value = '';
   currentTokens = [];
   selectedWordIndices.clear();
-  document.getElementById('sentenceEditor').innerHTML = '<div class="empty-state">Parse a sentence above</div>';
+  document.getElementById('sentenceEditor').innerHTML = '<div class="empty-state" style="width: 100%;">Parse a sentence above</div>';
 }
 
 function tokenizeTest() {
   const text = document.getElementById('testSentence').value.trim();
   if (!text) return alert('Paste a sentence');
-  
   const words = text.split(/\s+/);
   const tokens = [];
-  
   words.forEach((word, idx) => {
     const before = words.slice(Math.max(0, idx - 2), idx).map(w => {
       const l = lemmatizer.getLemma(w);
-      // Try to find type from learned contexts
       if (tokenizer.lemmaContexts.has(l)) {
         const types = Array.from(tokenizer.lemmaContexts.get(l).keys());
         return l + '/' + (types[0] || 'unk');
@@ -602,13 +820,10 @@ function tokenizeTest() {
       }
       return l + '/unk';
     });
-    
     const classified = tokenizer.classifyWord(word, { before, after });
     const lemma = lemmatizer.getLemma(word);
-    
     tokens.push({ word, ...classified, lemma });
   });
-  
   renderTokenOutput(tokens);
 }
 
@@ -616,10 +831,10 @@ function renderTokenOutput(tokens) {
   const output = document.getElementById('tokenOutput');
   output.innerHTML = tokens.map(t => `
     <div class="token">
-      <span class="value">${t.word}</span>
+      <span class="word">${t.word}</span>
       <span class="type">${t.type}</span>
-      <span class="conf">${t.confidence.toFixed(2)}</span>
-      <span style="color:#8b8b7f;font-size:0.65rem">→ ${t.lemma}</span>
+      <span class="lemma">${t.lemma}</span>
+      <span class="conf">${(t.confidence * 100).toFixed(0)}%</span>
     </div>
   `).join('');
 }
@@ -628,40 +843,36 @@ function clearTeach() {
   document.getElementById('teachSentence').value = '';
   currentTokens = [];
   selectedWordIndices.clear();
-  document.getElementById('sentenceEditor').innerHTML = '<div class="empty-state">Parse above</div>';
+  document.getElementById('sentenceEditor').innerHTML = '<div class="empty-state" style="width: 100%;">Parse above</div>';
 }
 
 function clearTest() {
   document.getElementById('testSentence').value = '';
-  document.getElementById('tokenOutput').innerHTML = '<div class="empty-state">Tokenize above</div>';
+  document.getElementById('tokenOutput').innerHTML = '<div class="empty-state" style="width: 100%;">Tokenize above</div>';
 }
 
-// ===== SEARCH =====
 function performSearch() {
   const query = document.getElementById('searchInput').value.trim().toLowerCase();
   if (!query) {
     document.getElementById('searchResults').innerHTML = '<div class="empty-state">Search above</div>';
     return;
   }
-  
   const results = [];
   lemmatizer.getAllLemmas().forEach(({ lemma, forms }) => {
     if (lemma.includes(query) || forms.some(f => f.includes(query))) {
       results.push({ lemma, forms });
     }
   });
-  
   const container = document.getElementById('searchResults');
   if (results.length === 0) {
     container.innerHTML = '<div class="empty-state">No matches</div>';
     return;
   }
-  
   container.innerHTML = results.map(({ lemma, forms }) => `
     <div class="search-result" onclick="showLemmaDetails('${lemma}')">
       <div class="result-lemma">${lemma}</div>
       <div class="result-forms">${forms.join(', ')}</div>
-      ${tokenizer.lemmaContexts.has(lemma) ? `<div class="result-contexts">${tokenizer.lemmaContexts.get(lemma).size} contexts learned</div>` : ''}
+      ${tokenizer.lemmaContexts.has(lemma) ? `<div class="result-contexts">${tokenizer.lemmaContexts.get(lemma).size} types</div>` : ''}
     </div>
   `).join('');
 }
@@ -669,25 +880,22 @@ function performSearch() {
 function showLemmaDetails(lemma) {
   const forms = lemmatizer.getForms(lemma);
   const contexts = tokenizer.lemmaContexts.get(lemma);
-  
   let html = `
     <div class="lemma-family">
-      <div class="lemma-header">${lemma}</div>
+      <div class="lemma-name">${lemma}</div>
       <div class="form-list">
         ${forms.map(f => `<span class="form-badge">${f}</span>`).join('')}
       </div>
   `;
-  
   if (contexts && contexts.size > 0) {
-    html += `<div style="margin-top:1rem"><strong style="color:#8b7355">Learned Types:</strong>`;
+    html += `<div style="margin-top: 1rem;">`;
     contexts.forEach((ctxList, type) => {
-      html += `<div style="font-size:0.8rem;margin-top:0.3rem"><span style="color:#8b7355">${type}</span> (${ctxList.length} examples)</div>`;
+      html += `<div style="font-size: 0.8rem; margin: 0.3rem 0; color: #b3d9ff;"><span style="color: #4a9eff; font-weight: 600;">${type}</span> — ${ctxList.length} example${ctxList.length !== 1 ? 's' : ''}</div>`;
     });
     html += `</div>`;
   } else {
-    html += `<div style="margin-top:1rem;color:#999;font-size:0.8rem">No type contexts learned for this lemma yet</div>`;
+    html += `<div style="margin-top: 1rem; color: #666; font-size: 0.8rem;">No contexts learned</div>`;
   }
-  
   html += `</div>`;
   document.getElementById('lemmaDetails').innerHTML = html;
 }
@@ -698,7 +906,6 @@ function updateStats() {
   document.getElementById('contextCount').textContent = stats.contexts;
 }
 
-// Init
 initDB();
 </script>
 
