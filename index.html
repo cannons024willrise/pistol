@@ -177,7 +177,7 @@ button:disabled { background: #333; color: #666; cursor: not-allowed; }
 }
 .sentence-preview .chip .idx { color: #666; font-size: 0.65rem; margin-right: 0.3rem; }
 
-/* WORD TRAINING CARDS — the star of the show, given real space */
+/* WORD TRAINING CARDS */
 .word-card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
@@ -326,7 +326,9 @@ button:disabled { background: #333; color: #666; cursor: not-allowed; }
     </div>
 
     <div class="guide-box">
-      Enter a full sentence and break it into words. Word order is preserved and used as context for training. Once broken apart, move to <strong>Word Training</strong> to tag each word's Type, Base form, and Grammar form.
+      Enter a full sentence and break it into words. Word order is preserved and used as context for training.
+      Regular forms can teach reusable suffix patterns. Irregular forms are learned separately and can influence
+      unseen words only through strong matching sentence context, with very low confidence.
     </div>
 
     <div class="section">
@@ -348,12 +350,14 @@ button:disabled { background: #333; color: #666; cursor: not-allowed; }
   </div>
 </div>
 
-<!-- TAB 2: WORD TRAINING (given full room, no longer crammed) -->
+<!-- TAB 2: WORD TRAINING -->
 <div id="wordtraining" class="tab-pane">
   <div class="page">
 
     <div class="guide-box">
-      Tag each word below: <strong>Type</strong>, <strong>Base form</strong>, and optional <strong>Grammar form</strong> (leave blank for names). Base-form guesses (blue link) come from patterns learned across everything you've taught so far — nothing is hardcoded.
+      Tag each word below: <strong>Type</strong>, <strong>Base form</strong>, and optional <strong>Grammar form</strong>
+      (leave blank for names). Base-form guesses come from learned regular patterns. Irregular families are kept
+      separately and are only used for very-low-confidence contextual inference after multiple forms have been taught.
     </div>
 
     <div class="word-card-grid" id="wordCardGrid">
@@ -417,42 +421,81 @@ button:disabled { background: #333; color: #666; cursor: not-allowed; }
 // ===== PATTERN LEARNER =====
 class PatternLearner {
   constructor() { this.rules = new Map(); }
+
   learn(surface, base) {
-    surface = surface.toLowerCase(); base = base.toLowerCase();
+    surface = surface.toLowerCase();
+    base = base.toLowerCase();
     if (surface === base) return;
+
     let i = 0;
     const maxLen = Math.min(surface.length, base.length);
     while (i < maxLen && surface[i] === base[i]) i++;
+
     const fromSuffix = surface.slice(i);
     const toSuffix = base.slice(i);
+
     if (fromSuffix === '') return;
     if (!this.rules.has(fromSuffix)) this.rules.set(fromSuffix, new Map());
+
     const m = this.rules.get(fromSuffix);
     m.set(toSuffix, (m.get(toSuffix) || 0) + 1);
   }
+
   guess(word) {
     word = word.toLowerCase();
+
     let bestFrom = null, bestTo = null, bestLen = -1, bestCount = -1;
+
     this.rules.forEach((toMap, fromSuffix) => {
       if (fromSuffix.length <= word.length && word.endsWith(fromSuffix)) {
         let topTo = null, topCount = -1;
-        toMap.forEach((count, to) => { if (count > topCount) { topCount = count; topTo = to; } });
-        if (fromSuffix.length > bestLen || (fromSuffix.length === bestLen && topCount > bestCount)) {
-          bestLen = fromSuffix.length; bestFrom = fromSuffix; bestTo = topTo; bestCount = topCount;
+
+        toMap.forEach((count, to) => {
+          if (count > topCount) {
+            topCount = count;
+            topTo = to;
+          }
+        });
+
+        if (
+          fromSuffix.length > bestLen ||
+          (fromSuffix.length === bestLen && topCount > bestCount)
+        ) {
+          bestLen = fromSuffix.length;
+          bestFrom = fromSuffix;
+          bestTo = topTo;
+          bestCount = topCount;
         }
       }
     });
+
     if (bestFrom === null) return null;
+
     const stem = word.slice(0, word.length - bestFrom.length);
-    return { base: stem + bestTo, matchedSuffix: bestFrom, support: bestCount };
+
+    return {
+      base: stem + bestTo,
+      matchedSuffix: bestFrom,
+      support: bestCount
+    };
   }
+
   size() { return this.rules.size; }
-  toJSON() { return Array.from(this.rules.entries()).map(([from, toMap]) => [from, Array.from(toMap.entries())]); }
+
+  toJSON() {
+    return Array.from(this.rules.entries()).map(
+      ([from, toMap]) => [from, Array.from(toMap.entries())]
+    );
+  }
+
   fromJSON(data) {
     this.rules = new Map();
-    (data || []).forEach(([from, toEntries]) => this.rules.set(from, new Map(toEntries)));
+    (data || []).forEach(([from, toEntries]) => {
+      this.rules.set(from, new Map(toEntries));
+    });
   }
 }
+
 
 // ===== LEMMATIZER =====
 class Lemmatizer {
@@ -460,36 +503,136 @@ class Lemmatizer {
     this.lemmas = new Map();
     this.forms = new Map();
     this.formLabels = new Map();
+
+    // Strong, reusable regular morphology.
     this.patterns = new PatternLearner();
+
+    // Weak irregular-family evidence.
+    // base -> Map(surfaceForm -> observationCount)
+    this.irregularForms = new Map();
   }
+
+  /*
+   * Detect forms that should NOT be pushed into the regular suffix learner.
+   * This is deliberately conservative: strong shared prefixes are treated
+   * as normal morphology, while radically changed forms are kept weak.
+   */
+  isLikelyIrregular(surface, base) {
+    if (!surface || !base || surface === base) return false;
+
+    let i = 0;
+    const maxLen = Math.min(surface.length, base.length);
+
+    while (i < maxLen && surface[i] === base[i]) i++;
+
+    const minLen = Math.max(1, Math.min(surface.length, base.length));
+    const prefixRatio = i / minLen;
+
+    return i < 2 || prefixRatio < 0.75;
+  }
+
+  learnIrregular(surface, base) {
+    if (!this.irregularForms.has(base)) {
+      this.irregularForms.set(base, new Map());
+    }
+
+    const forms = this.irregularForms.get(base);
+    forms.set(surface, (forms.get(surface) || 0) + 1);
+  }
+
+  getWeakIrregularForms(lemma) {
+    const forms = this.irregularForms.get(lemma);
+    return forms ? Array.from(forms.keys()) : [];
+  }
+
   teach(surfaceForm, base, grammarForm) {
     const sf = surfaceForm.toLowerCase();
     const b = base.toLowerCase();
-    if (!this.lemmas.has(b)) this.lemmas.set(b, new Set());
+
+    if (!this.lemmas.has(b)) {
+      this.lemmas.set(b, new Set());
+    }
+
     this.lemmas.get(b).add(sf);
     this.forms.set(sf, b);
-    if (grammarForm && grammarForm.trim()) this.formLabels.set(sf, grammarForm.trim());
-    else this.formLabels.delete(sf);
-    this.patterns.learn(sf, b);
+
+    if (grammarForm && grammarForm.trim()) {
+      this.formLabels.set(sf, grammarForm.trim());
+    } else {
+      this.formLabels.delete(sf);
+    }
+
+    /*
+     * Important safety split:
+     * irregular mappings are learned as separate weak evidence and do NOT
+     * pollute the reusable suffix-pattern system.
+     */
+    if (this.isLikelyIrregular(sf, b)) {
+      this.learnIrregular(sf, b);
+    } else {
+      this.patterns.learn(sf, b);
+    }
   }
+
   resolve(word) {
     const lower = word.toLowerCase();
-    if (this.forms.has(lower)) return { base: this.forms.get(lower), source: 'taught', confidence: 1, matchedSuffix: null };
+
+    // Exact taught memory always wins.
+    if (this.forms.has(lower)) {
+      return {
+        base: this.forms.get(lower),
+        source: 'taught',
+        confidence: 1,
+        matchedSuffix: null
+      };
+    }
+
+    // Regular learned morphology.
     const guess = this.patterns.guess(lower);
-    if (guess) return { base: guess.base, source: 'learned-pattern', confidence: Math.min(0.9, 0.4 + guess.support * 0.1), matchedSuffix: guess.matchedSuffix };
-    return { base: lower, source: 'unknown', confidence: 0, matchedSuffix: null };
+
+    if (guess) {
+      return {
+        base: guess.base,
+        source: 'learned-pattern',
+        confidence: Math.min(0.9, 0.4 + guess.support * 0.1),
+        matchedSuffix: guess.matchedSuffix
+      };
+    }
+
+    return {
+      base: lower,
+      source: 'unknown',
+      confidence: 0,
+      matchedSuffix: null
+    };
   }
-  getLemma(word) { return this.resolve(word).base; }
-  getFormLabel(surfaceForm) { return this.formLabels.get(surfaceForm.toLowerCase()) || null; }
+
+  getLemma(word) {
+    return this.resolve(word).base;
+  }
+
+  getFormLabel(surfaceForm) {
+    return this.formLabels.get(surfaceForm.toLowerCase()) || null;
+  }
+
   getAllLemmas() {
     return Array.from(this.lemmas.entries()).map(([lemma, forms]) => ({
-      lemma, forms: Array.from(forms).map(f => ({ surface: f, form: this.formLabels.get(f) || null }))
+      lemma,
+      forms: Array.from(forms).map(f => ({
+        surface: f,
+        form: this.formLabels.get(f) || null
+      }))
     }));
   }
+
   getForms(lemma) {
-    return Array.from(this.lemmas.get(lemma) || new Set()).map(f => ({ surface: f, form: this.formLabels.get(f) || null }));
+    return Array.from(this.lemmas.get(lemma) || new Set()).map(f => ({
+      surface: f,
+      form: this.formLabels.get(f) || null
+    }));
   }
 }
+
 
 // ===== CONTEXT TOKENIZER =====
 class ContextTokenizer {
@@ -498,46 +641,214 @@ class ContextTokenizer {
     this.lemmaContexts = new Map();
     this.sentenceCount = 0;
   }
+
   learnSentence(tokens) {
     this.sentenceCount++;
+
     tokens.forEach((token, idx) => {
       if (!token.type) return;
+
       const lemma = token.base || this.lemmatizer.getLemma(token.value);
-      const before = tokens.slice(Math.max(0, idx - 2), idx).map(t => (t.base || this.lemmatizer.getLemma(t.value)) + '/' + (t.type || 'unk'));
-      const after = tokens.slice(idx + 1, Math.min(tokens.length, idx + 3)).map(t => (t.base || this.lemmatizer.getLemma(t.value)) + '/' + (t.type || 'unk'));
+
+      const before = tokens
+        .slice(Math.max(0, idx - 2), idx)
+        .map(t =>
+          (t.base || this.lemmatizer.getLemma(t.value)) + '/' + (t.type || 'unk')
+        );
+
+      const after = tokens
+        .slice(idx + 1, Math.min(tokens.length, idx + 3))
+        .map(t =>
+          (t.base || this.lemmatizer.getLemma(t.value)) + '/' + (t.type || 'unk')
+        );
+
       const context = { before, after };
-      if (!this.lemmaContexts.has(lemma)) this.lemmaContexts.set(lemma, new Map());
+
+      if (!this.lemmaContexts.has(lemma)) {
+        this.lemmaContexts.set(lemma, new Map());
+      }
+
       const typeMap = this.lemmaContexts.get(lemma);
-      if (!typeMap.has(token.type)) typeMap.set(token.type, []);
+
+      if (!typeMap.has(token.type)) {
+        typeMap.set(token.type, []);
+      }
+
       typeMap.get(token.type).push(context);
     });
   }
+
   classifyWord(lemma, neighborLemmas) {
     const scores = new Map();
+
     if (this.lemmaContexts.has(lemma)) {
       const typeMap = this.lemmaContexts.get(lemma);
+
       typeMap.forEach((contexts, type) => {
         let score = 0;
+
         contexts.forEach(ctx => {
           let matches = 0;
-          neighborLemmas.before.forEach((nl, i) => { if (ctx.before[i] === nl) matches++; });
-          neighborLemmas.after.forEach((nl, i) => { if (ctx.after[i] === nl) matches++; });
-          score += matches / (neighborLemmas.before.length + neighborLemmas.after.length + 1);
+
+          neighborLemmas.before.forEach((nl, i) => {
+            if (ctx.before[i] === nl) matches++;
+          });
+
+          neighborLemmas.after.forEach((nl, i) => {
+            if (ctx.after[i] === nl) matches++;
+          });
+
+          score += matches /
+            (neighborLemmas.before.length + neighborLemmas.after.length + 1);
         });
+
         scores.set(type, score / contexts.length);
       });
     }
-    if (scores.size === 0) return { type: 'unknown', confidence: 0 };
+
+    if (scores.size === 0) {
+      return { type: 'unknown', confidence: 0 };
+    }
+
     let best = { type: 'unknown', confidence: 0 };
-    scores.forEach((score, type) => { if (score > best.confidence) best = { type, confidence: score }; });
+
+    scores.forEach((score, type) => {
+      if (score > best.confidence) {
+        best = { type, confidence: score };
+      }
+    });
+
     return best;
   }
+
+  /*
+   * Weak irregular inference:
+   *
+   * Example training:
+   *   they are here
+   *   she is here
+   *   I am here
+   *
+   * If "are" was not directly taught but "be" has multiple known irregular
+   * forms, matching sentence context may cautiously infer:
+   *   are -> be
+   *
+   * This is intentionally much weaker than direct memory or regular patterns.
+   */
+  inferIrregularLemma(word, neighborLemmas) {
+    const candidates = [];
+
+    this.lemmaContexts.forEach((typeMap, lemma) => {
+      const weakForms = this.lemmatizer.getWeakIrregularForms(lemma);
+
+      // Require multiple independently taught irregular forms.
+      if (weakForms.length < 2) return;
+
+      let bestScore = 0;
+      let bestMatches = 0;
+      let contextExamples = 0;
+
+      typeMap.forEach(contexts => {
+        contexts.forEach(ctx => {
+          let matches = 0;
+          let usable = 0;
+
+          const compare = (stored, current) => {
+            if (!current || current.endsWith('/unk')) return;
+
+            usable++;
+
+            const storedLemma = String(stored || '').split('/')[0];
+            const currentLemma = String(current).split('/')[0];
+
+            if (storedLemma && storedLemma === currentLemma) {
+              matches++;
+            }
+          };
+
+          neighborLemmas.before.forEach((n, i) => compare(ctx.before[i], n));
+          neighborLemmas.after.forEach((n, i) => compare(ctx.after[i], n));
+
+          // Unknown/noisy neighbors do not count as evidence.
+          if (usable > 0) {
+            contextExamples++;
+            const score = matches / usable;
+
+            if (score > bestScore) bestScore = score;
+            if (matches > bestMatches) bestMatches = matches;
+          }
+        });
+      });
+
+      /*
+       * Require:
+       * - at least 2 matching known neighbors somewhere
+       * - at least moderate context agreement
+       * - multiple stored examples for the lemma
+       */
+      if (
+        bestMatches >= 2 &&
+        bestScore >= 0.5 &&
+        contextExamples >= 2
+      ) {
+        candidates.push({
+          lemma,
+          score: bestScore,
+          forms: weakForms.length,
+          examples: contextExamples
+        });
+      }
+    });
+
+    if (!candidates.length) return null;
+
+    candidates.sort((a, b) =>
+      b.score - a.score ||
+      b.forms - a.forms ||
+      b.examples - a.examples
+    );
+
+    const best = candidates[0];
+    const second = candidates[1];
+
+    /*
+     * Do not guess when two unrelated lemmas have similarly convincing
+     * contexts. Ambiguity is safer than confidently inventing grammar.
+     */
+    if (
+      second &&
+      best.score - second.score < 0.15
+    ) {
+      return null;
+    }
+
+    // Extremely low ceiling by design.
+    const confidence = Math.min(0.12, 0.04 + best.score * 0.08);
+
+    return {
+      base: best.lemma,
+      source: 'learned-irregular-context',
+      confidence,
+      matchedSuffix: null
+    };
+  }
+
   getStats() {
     let totalContexts = 0;
-    this.lemmaContexts.forEach(typeMap => typeMap.forEach(contexts => totalContexts += contexts.length));
-    return { sentences: this.sentenceCount, contexts: totalContexts };
+
+    this.lemmaContexts.forEach(typeMap =>
+      typeMap.forEach(contexts => {
+        totalContexts += contexts.length;
+      })
+    );
+
+    return {
+      sentences: this.sentenceCount,
+      contexts: totalContexts
+    };
   }
 }
+
 
 // ===== STORAGE =====
 let db, lemmatizer, tokenizer;
@@ -545,89 +856,194 @@ let db, lemmatizer, tokenizer;
 async function initDB() {
   return new Promise((resolve) => {
     const req = indexedDB.open('PistolLemmaDB', 2);
-    req.onerror = () => { lemmatizer = new Lemmatizer(); tokenizer = new ContextTokenizer(lemmatizer); resolve(); };
-    req.onsuccess = () => { db = req.result; loadAll().then(resolve); };
+
+    req.onerror = () => {
+      lemmatizer = new Lemmatizer();
+      tokenizer = new ContextTokenizer(lemmatizer);
+      resolve();
+    };
+
+    req.onsuccess = () => {
+      db = req.result;
+      loadAll().then(resolve);
+    };
+
     req.onupgradeneeded = (e) => {
       const d = e.target.result;
-      if (!d.objectStoreNames.contains('lemmatizer')) d.createObjectStore('lemmatizer', { keyPath: 'key' });
-      if (!d.objectStoreNames.contains('tokenizer')) d.createObjectStore('tokenizer', { keyPath: 'key' });
+
+      if (!d.objectStoreNames.contains('lemmatizer')) {
+        d.createObjectStore('lemmatizer', { keyPath: 'key' });
+      }
+
+      if (!d.objectStoreNames.contains('tokenizer')) {
+        d.createObjectStore('tokenizer', { keyPath: 'key' });
+      }
     };
   });
 }
 
 async function saveAll() {
   if (!db) return;
+
   const lemData = {
     key: 'lemmatizer',
-    lemmas: Array.from(lemmatizer.lemmas.entries()).map(([k, v]) => [k, Array.from(v)]),
+
+    lemmas: Array.from(lemmatizer.lemmas.entries())
+      .map(([k, v]) => [k, Array.from(v)]),
+
     forms: Array.from(lemmatizer.forms.entries()),
+
     formLabels: Array.from(lemmatizer.formLabels.entries()),
-    patterns: lemmatizer.patterns.toJSON()
+
+    patterns: lemmatizer.patterns.toJSON(),
+
+    irregularForms: Array.from(lemmatizer.irregularForms.entries())
+      .map(([lemma, forms]) => [
+        lemma,
+        Array.from(forms.entries())
+      ])
   };
+
   const tokData = {
     key: 'tokenizer',
-    lemmaContexts: Array.from(tokenizer.lemmaContexts.entries()).map(([lemma, typeMap]) => ({
-      lemma, types: Array.from(typeMap.entries()).map(([type, contexts]) => ({ type, contexts }))
-    })),
+
+    lemmaContexts: Array.from(tokenizer.lemmaContexts.entries())
+      .map(([lemma, typeMap]) => ({
+        lemma,
+        types: Array.from(typeMap.entries())
+          .map(([type, contexts]) => ({ type, contexts }))
+      })),
+
     sentenceCount: tokenizer.sentenceCount
   };
+
   return new Promise((resolve) => {
-    const tx = db.transaction(['lemmatizer', 'tokenizer'], 'readwrite');
+    const tx = db.transaction(
+      ['lemmatizer', 'tokenizer'],
+      'readwrite'
+    );
+
     tx.objectStore('lemmatizer').put(lemData);
     tx.objectStore('tokenizer').put(tokData);
-    tx.oncomplete = () => { updateStats(); resolve(); };
-  });
-}
 
-async function loadAll() {
-  lemmatizer = new Lemmatizer();
-  tokenizer = new ContextTokenizer(lemmatizer);
-  if (!db) return;
-  return new Promise((resolve) => {
-    const tx = db.transaction(['lemmatizer', 'tokenizer'], 'readonly');
-    const lemReq = tx.objectStore('lemmatizer').get('lemmatizer');
-    lemReq.onsuccess = () => {
-      if (lemReq.result) {
-        const r = lemReq.result;
-        lemmatizer.lemmas = new Map((r.lemmas || []).map(([k, v]) => [k, new Set(v)]));
-        lemmatizer.forms = new Map(r.forms || []);
-        lemmatizer.formLabels = new Map(r.formLabels || []);
-        lemmatizer.patterns.fromJSON(r.patterns || []);
-      }
-    };
-    const tokReq = tx.objectStore('tokenizer').get('tokenizer');
-    tokReq.onsuccess = () => {
-      if (tokReq.result) {
-        const data = tokReq.result;
-        (data.lemmaContexts || []).forEach(({ lemma, types }) => {
-          const typeMap = new Map();
-          types.forEach(({ type, contexts }) => typeMap.set(type, contexts));
-          tokenizer.lemmaContexts.set(lemma, typeMap);
-        });
-        tokenizer.sentenceCount = data.sentenceCount || 0;
-      }
+    tx.oncomplete = () => {
       updateStats();
       resolve();
     };
   });
 }
 
+async function loadAll() {
+  lemmatizer = new Lemmatizer();
+  tokenizer = new ContextTokenizer(lemmatizer);
+
+  if (!db) return;
+
+  return new Promise((resolve) => {
+    const tx = db.transaction(
+      ['lemmatizer', 'tokenizer'],
+      'readonly'
+    );
+
+    const lemReq =
+      tx.objectStore('lemmatizer').get('lemmatizer');
+
+    lemReq.onsuccess = () => {
+      if (lemReq.result) {
+        const r = lemReq.result;
+
+        lemmatizer.lemmas = new Map(
+          (r.lemmas || []).map(([k, v]) => [
+            k,
+            new Set(v)
+          ])
+        );
+
+        lemmatizer.forms =
+          new Map(r.forms || []);
+
+        lemmatizer.formLabels =
+          new Map(r.formLabels || []);
+
+        lemmatizer.patterns.fromJSON(
+          r.patterns || []
+        );
+
+        lemmatizer.irregularForms = new Map(
+          (r.irregularForms || []).map(([lemma, forms]) => [
+            lemma,
+            new Map(forms)
+          ])
+        );
+      }
+    };
+
+    const tokReq =
+      tx.objectStore('tokenizer').get('tokenizer');
+
+    tokReq.onsuccess = () => {
+      if (tokReq.result) {
+        const data = tokReq.result;
+
+        (data.lemmaContexts || []).forEach(({ lemma, types }) => {
+          const typeMap = new Map();
+
+          types.forEach(({ type, contexts }) => {
+            typeMap.set(type, contexts);
+          });
+
+          tokenizer.lemmaContexts.set(
+            lemma,
+            typeMap
+          );
+        });
+
+        tokenizer.sentenceCount =
+          data.sentenceCount || 0;
+      }
+
+      updateStats();
+      resolve();
+    };
+  });
+}
+
+
 // ===== JSON I/O =====
 function serializeState() {
   return {
     format: 'pistol-lemma-export',
-    version: 1,
+    version: 2,
     exportedAt: new Date().toISOString(),
+
     lemmatizer: {
-      lemmas: Array.from(lemmatizer.lemmas.entries()).map(([k, v]) => [k, Array.from(v)]),
+      lemmas: Array.from(lemmatizer.lemmas.entries())
+        .map(([k, v]) => [k, Array.from(v)]),
+
       forms: Array.from(lemmatizer.forms.entries()),
+
       formLabels: Array.from(lemmatizer.formLabels.entries()),
-      patterns: lemmatizer.patterns.toJSON()
+
+      patterns: lemmatizer.patterns.toJSON(),
+
+      irregularForms: Array.from(lemmatizer.irregularForms.entries())
+        .map(([lemma, forms]) => [
+          lemma,
+          Array.from(forms.entries())
+        ])
     },
+
     tokenizer: {
-      lemmaContexts: Array.from(tokenizer.lemmaContexts.entries()).map(([lemma, typeMap]) => ({
-        lemma, types: Array.from(typeMap.entries()).map(([type, contexts]) => ({ type, contexts }))
-      })),
+      lemmaContexts: Array.from(tokenizer.lemmaContexts.entries())
+        .map(([lemma, typeMap]) => ({
+          lemma,
+          types: Array.from(typeMap.entries())
+            .map(([type, contexts]) => ({
+              type,
+              contexts
+            }))
+        })),
+
       sentenceCount: tokenizer.sentenceCount
     }
   };
@@ -635,322 +1051,851 @@ function serializeState() {
 
 function exportData() {
   const data = serializeState();
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+
+  const blob = new Blob(
+    [JSON.stringify(data, null, 2)],
+    { type: 'application/json' }
+  );
+
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+
+  const stamp = new Date()
+    .toISOString()
+    .slice(0, 19)
+    .replace(/[:T]/g, '-');
+
   a.href = url;
   a.download = `pistol-lemma-export-${stamp}.json`;
+
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
+
   URL.revokeObjectURL(url);
+
   setIoStatus('Exported.');
 }
 
 function importData(file) {
   if (!file) return;
+
   const reader = new FileReader();
+
   reader.onload = async () => {
     let data;
-    try { data = JSON.parse(reader.result); } catch (err) { alert('That file is not valid JSON.'); return; }
-    if (!data || !data.lemmatizer || !data.tokenizer) { alert('This JSON file doesn\'t look like a Pistol export.'); return; }
-    const mode = confirm('Click OK to MERGE this file into your current data.\nClick Cancel to REPLACE all current data with this file.') ? 'merge' : 'replace';
-    if (mode === 'replace') { lemmatizer = new Lemmatizer(); tokenizer = new ContextTokenizer(lemmatizer); }
+
+    try {
+      data = JSON.parse(reader.result);
+    } catch (err) {
+      alert('That file is not valid JSON.');
+      return;
+    }
+
+    if (!data || !data.lemmatizer || !data.tokenizer) {
+      alert('This JSON file doesn\'t look like a Pistol export.');
+      return;
+    }
+
+    const mode = confirm(
+      'Click OK to MERGE this file into your current data.\n' +
+      'Click Cancel to REPLACE all current data with this file.'
+    ) ? 'merge' : 'replace';
+
+    if (mode === 'replace') {
+      lemmatizer = new Lemmatizer();
+      tokenizer = new ContextTokenizer(lemmatizer);
+    }
+
     (data.lemmatizer.lemmas || []).forEach(([base, forms]) => {
-      if (!lemmatizer.lemmas.has(base)) lemmatizer.lemmas.set(base, new Set());
-      forms.forEach(f => lemmatizer.lemmas.get(base).add(f));
+      if (!lemmatizer.lemmas.has(base)) {
+        lemmatizer.lemmas.set(base, new Set());
+      }
+
+      forms.forEach(f =>
+        lemmatizer.lemmas.get(base).add(f)
+      );
     });
-    (data.lemmatizer.forms || []).forEach(([surface, base]) => lemmatizer.forms.set(surface, base));
-    (data.lemmatizer.formLabels || []).forEach(([surface, label]) => lemmatizer.formLabels.set(surface, label));
+
+    (data.lemmatizer.forms || []).forEach(([surface, base]) => {
+      lemmatizer.forms.set(surface, base);
+    });
+
+    (data.lemmatizer.formLabels || []).forEach(([surface, label]) => {
+      lemmatizer.formLabels.set(surface, label);
+    });
+
     (data.lemmatizer.patterns || []).forEach(([fromSuffix, toEntries]) => {
-      if (!lemmatizer.patterns.rules.has(fromSuffix)) lemmatizer.patterns.rules.set(fromSuffix, new Map());
-      const m = lemmatizer.patterns.rules.get(fromSuffix);
-      toEntries.forEach(([toSuffix, count]) => m.set(toSuffix, (m.get(toSuffix) || 0) + count));
-    });
-    (data.tokenizer.lemmaContexts || []).forEach(({ lemma, types }) => {
-      if (!tokenizer.lemmaContexts.has(lemma)) tokenizer.lemmaContexts.set(lemma, new Map());
-      const typeMap = tokenizer.lemmaContexts.get(lemma);
-      types.forEach(({ type, contexts }) => {
-        if (!typeMap.has(type)) typeMap.set(type, []);
-        typeMap.set(type, typeMap.get(type).concat(contexts));
+      if (!lemmatizer.patterns.rules.has(fromSuffix)) {
+        lemmatizer.patterns.rules.set(
+          fromSuffix,
+          new Map()
+        );
+      }
+
+      const m =
+        lemmatizer.patterns.rules.get(fromSuffix);
+
+      toEntries.forEach(([toSuffix, count]) => {
+        m.set(
+          toSuffix,
+          (m.get(toSuffix) || 0) + count
+        );
       });
     });
-    tokenizer.sentenceCount = mode === 'replace' ? (data.tokenizer.sentenceCount || 0) : tokenizer.sentenceCount + (data.tokenizer.sentenceCount || 0);
+
+    /*
+     * Import weak irregular evidence separately.
+     */
+    (data.lemmatizer.irregularForms || []).forEach(([lemma, forms]) => {
+      if (!lemmatizer.irregularForms.has(lemma)) {
+        lemmatizer.irregularForms.set(
+          lemma,
+          new Map()
+        );
+      }
+
+      const m =
+        lemmatizer.irregularForms.get(lemma);
+
+      forms.forEach(([surface, count]) => {
+        m.set(
+          surface,
+          (m.get(surface) || 0) + count
+        );
+      });
+    });
+
+    (data.tokenizer.lemmaContexts || []).forEach(({ lemma, types }) => {
+      if (!tokenizer.lemmaContexts.has(lemma)) {
+        tokenizer.lemmaContexts.set(
+          lemma,
+          new Map()
+        );
+      }
+
+      const typeMap =
+        tokenizer.lemmaContexts.get(lemma);
+
+      types.forEach(({ type, contexts }) => {
+        if (!typeMap.has(type)) {
+          typeMap.set(type, []);
+        }
+
+        typeMap.set(
+          type,
+          typeMap.get(type).concat(contexts)
+        );
+      });
+    });
+
+    tokenizer.sentenceCount =
+      mode === 'replace'
+        ? (data.tokenizer.sentenceCount || 0)
+        : tokenizer.sentenceCount +
+          (data.tokenizer.sentenceCount || 0);
+
     await saveAll();
     updateStats();
-    document.getElementById('searchResults').innerHTML = '<div class="empty-state">Search above</div>';
-    document.getElementById('lemmaDetails').innerHTML = '<div class="empty-state">Select a lemma from the results above</div>';
-    setIoStatus(mode === 'replace' ? 'Replaced with imported data.' : 'Merged imported data.');
+
+    document.getElementById('searchResults').innerHTML =
+      '<div class="empty-state">Search above</div>';
+
+    document.getElementById('lemmaDetails').innerHTML =
+      '<div class="empty-state">Select a lemma from the results above</div>';
+
+    setIoStatus(
+      mode === 'replace'
+        ? 'Replaced with imported data.'
+        : 'Merged imported data.'
+    );
   };
+
   reader.readAsText(file);
-  document.getElementById('importFileInput').value = '';
+
+  document.getElementById(
+    'importFileInput'
+  ).value = '';
 }
 
 function setIoStatus(msg) {
   const el = document.getElementById('ioStatus');
+
   el.textContent = msg;
-  setTimeout(() => { if (el.textContent === msg) el.textContent = ''; }, 4000);
+
+  setTimeout(() => {
+    if (el.textContent === msg) {
+      el.textContent = '';
+    }
+  }, 4000);
 }
+
 
 // ===== TAB SWITCHING =====
 function activateTab(tabId) {
-  document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-  document.getElementById(tabId).classList.add('active');
-  const btn = document.querySelector(`.tab-btn[data-tab="${tabId}"]`);
+  document.querySelectorAll('.tab-pane')
+    .forEach(el => el.classList.remove('active'));
+
+  document.querySelectorAll('.tab-btn')
+    .forEach(el => el.classList.remove('active'));
+
+  document.getElementById(tabId)
+    .classList.add('active');
+
+  const btn =
+    document.querySelector(
+      `.tab-btn[data-tab="${tabId}"]`
+    );
+
   if (btn) btn.classList.add('active');
 }
-function switchTab(e, tabId) { activateTab(tabId); }
-function switchTabById(tabId) { activateTab(tabId); }
+
+function switchTab(e, tabId) {
+  activateTab(tabId);
+}
+
+function switchTabById(tabId) {
+  activateTab(tabId);
+}
+
 
 // ===== TEXT TOKENIZATION =====
-// Splits a sentence into words AND punctuation marks as separate tokens,
-// while preserving the original left-to-right order. Contractions like
-// "don't" or "Sarah's" stay as one word token; punctuation runs (.,!?;:"()-—)
-// become their own token(s).
 function tokenizeText(text) {
-  const re = /[A-Za-z0-9]+(?:['\u2019][A-Za-z0-9]+)*|[^\sA-Za-z0-9]+/g;
+  const re =
+    /[A-Za-z0-9]+(?:['\u2019][A-Za-z0-9]+)*|[^\sA-Za-z0-9]+/g;
+
   return text.match(re) || [];
 }
+
 function isPunctuationToken(tok) {
   return /^[^A-Za-z0-9]+$/.test(tok);
 }
+
 
 // ===== TEACH STATE =====
 let teachWords = [];
 
 function parseSentence() {
-  const text = document.getElementById('teachSentence').value.trim();
+  const text =
+    document.getElementById('teachSentence').value.trim();
+
   if (!text) return alert('Enter a sentence');
+
   const words = tokenizeText(text);
+
   teachWords = words.map(w => {
     if (isPunctuationToken(w)) {
-      return { value: w, type: 'punctuation', base: w, grammar: '', guessSource: 'punctuation' };
+      return {
+        value: w,
+        type: 'punctuation',
+        base: w,
+        grammar: '',
+        guessSource: 'punctuation'
+      };
     }
-    const resolved = lemmatizer.resolve(w);
+
+    const resolved =
+      lemmatizer.resolve(w);
+
     return {
       value: w,
       type: '',
-      base: resolved.source === 'unknown' ? '' : resolved.base,
-      grammar: lemmatizer.getFormLabel(w) || '',
-      guessSource: resolved.source
+      base:
+        resolved.source === 'unknown'
+          ? ''
+          : resolved.base,
+      grammar:
+        lemmatizer.getFormLabel(w) || '',
+      guessSource:
+        resolved.source
     };
   });
+
   renderSentencePreview();
   renderWordCards();
   activateTab('wordtraining');
 }
 
 function renderSentencePreview() {
-  const container = document.getElementById('sentencePreview');
+  const container =
+    document.getElementById('sentencePreview');
+
   if (teachWords.length === 0) {
-    container.innerHTML = '<div class="empty-state" style="width:100%;">Break a sentence into words above</div>';
+    container.innerHTML =
+      '<div class="empty-state" style="width:100%;">Break a sentence into words above</div>';
+
     return;
   }
-  container.innerHTML = teachWords.map((w, idx) => `
-    <span class="chip"><span class="idx">${idx + 1}</span>${w.value}</span>
-  `).join('');
+
+  container.innerHTML =
+    teachWords.map((w, idx) => `
+      <span class="chip">
+        <span class="idx">${idx + 1}</span>${w.value}
+      </span>
+    `).join('');
 }
 
 function renderWordCards() {
-  const grid = document.getElementById('wordCardGrid');
-  const btn = document.getElementById('learnSentenceBtn');
-  document.getElementById('wordCountBadge').textContent = teachWords.length;
+  const grid =
+    document.getElementById('wordCardGrid');
+
+  const btn =
+    document.getElementById('learnSentenceBtn');
+
+  document.getElementById('wordCountBadge')
+    .textContent = teachWords.length;
+
   if (teachWords.length === 0) {
-    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;">No words yet — go to Sentence Input first</div>';
+    grid.innerHTML =
+      '<div class="empty-state" style="grid-column:1/-1;">No words yet — go to Sentence Input first</div>';
+
     btn.disabled = true;
     return;
   }
+
   btn.disabled = false;
-  grid.innerHTML = teachWords.map((w, idx) => {
-    const hint = (w.guessSource === 'learned-pattern' && !w.base)
-      ? `<span class="guess-hint" id="wordhint-${idx}" onclick="acceptGuess(${idx})">use pattern guess: "${lemmatizer.resolve(w.value).base}"</span>`
-      : `<span class="guess-hint" id="wordhint-${idx}" style="display:none;"></span>`;
-    return `
-    <div class="word-card ${w.type && w.base ? 'complete' : ''} ${w.guessSource === 'punctuation' ? 'punct' : ''}" id="wordcard-${idx}">
-      <div class="word-card-header">
-        <div>
-          <div class="idx">Word #${idx + 1}</div>
-          <div class="value">${w.value}</div>
+
+  grid.innerHTML =
+    teachWords.map((w, idx) => {
+      const resolved =
+        lemmatizer.resolve(w.value);
+
+      const hint =
+        w.guessSource === 'learned-pattern'
+          ? `<span class="guess-hint" id="wordhint-${idx}" onclick="acceptGuess(${idx})">pattern guess: "${resolved.base}"</span>`
+          : `<span class="guess-hint" id="wordhint-${idx}" style="display:none;"></span>`;
+
+      return `
+        <div class="word-card ${w.type && w.base ? 'complete' : ''} ${w.guessSource === 'punctuation' ? 'punct' : ''}" id="wordcard-${idx}">
+          <div class="word-card-header">
+            <div>
+              <div class="idx">Word #${idx + 1}</div>
+              <div class="value">${w.value}</div>
+            </div>
+            <div class="status" id="wordstatus-${idx}">
+              ${w.type && w.base ? '✅' : '○'}
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label>Type</label>
+            <select id="wordtype-${idx}" onchange="updateWordField(${idx}, 'type', this.value)">
+              <option value="">Choose type...</option>
+              <option value="person" ${w.type === 'person' ? 'selected' : ''}>Person</option>
+              <option value="action" ${w.type === 'action' ? 'selected' : ''}>Action</option>
+              <option value="location" ${w.type === 'location' ? 'selected' : ''}>Location</option>
+              <option value="object" ${w.type === 'object' ? 'selected' : ''}>Object</option>
+              <option value="modifier" ${w.type === 'modifier' ? 'selected' : ''}>Modifier</option>
+              <option value="punctuation" ${w.type === 'punctuation' ? 'selected' : ''}>Punctuation</option>
+            </select>
+          </div>
+
+          <div class="field-group">
+            <label>Base form</label>
+            <input type="text" id="wordbase-${idx}" placeholder="e.g. run" value="${w.base}" oninput="updateWordField(${idx}, 'base', this.value)">
+            ${hint}
+          </div>
+
+          <div class="field-group">
+            <label>Grammar form (blank = name)</label>
+            <input type="text" id="wordgrammar-${idx}" placeholder="e.g. present continuous" value="${w.grammar}" oninput="updateWordField(${idx}, 'grammar', this.value)">
+          </div>
         </div>
-        <div class="status" id="wordstatus-${idx}">${w.type && w.base ? '✅' : '○'}</div>
-      </div>
-
-      <div class="field-group">
-        <label>Type</label>
-        <select id="wordtype-${idx}" onchange="updateWordField(${idx}, 'type', this.value)">
-          <option value="">Choose type...</option>
-          <option value="person" ${w.type === 'person' ? 'selected' : ''}>Person</option>
-          <option value="action" ${w.type === 'action' ? 'selected' : ''}>Action</option>
-          <option value="location" ${w.type === 'location' ? 'selected' : ''}>Location</option>
-          <option value="object" ${w.type === 'object' ? 'selected' : ''}>Object</option>
-          <option value="modifier" ${w.type === 'modifier' ? 'selected' : ''}>Modifier</option>
-          <option value="punctuation" ${w.type === 'punctuation' ? 'selected' : ''}>Punctuation</option>
-        </select>
-      </div>
-
-      <div class="field-group">
-        <label>Base form</label>
-        <input type="text" id="wordbase-${idx}" placeholder="e.g. run" value="${w.base}" oninput="updateWordField(${idx}, 'base', this.value)">
-        ${hint}
-      </div>
-
-      <div class="field-group">
-        <label>Grammar form (blank = name)</label>
-        <input type="text" id="wordgrammar-${idx}" placeholder="e.g. present continuous" value="${w.grammar}" oninput="updateWordField(${idx}, 'grammar', this.value)">
-      </div>
-    </div>
-  `;
-  }).join('');
+      `;
+    }).join('');
 }
 
-// Updates the data model and patches just the affected card's DOM in place —
-// never re-renders the whole grid, so the input the user is actively typing
-// in never loses focus or cursor position.
 function updateWordField(idx, field, value) {
   teachWords[idx][field] = value;
-  const card = document.getElementById(`wordcard-${idx}`);
+
+  const card =
+    document.getElementById(`wordcard-${idx}`);
+
   const w = teachWords[idx];
-  const complete = !!(w.type && w.base);
-  if (card) card.classList.toggle('complete', complete);
-  const status = document.getElementById(`wordstatus-${idx}`);
-  if (status) status.textContent = complete ? '✅' : '○';
+
+  const complete =
+    !!(w.type && w.base);
+
+  if (card) {
+    card.classList.toggle(
+      'complete',
+      complete
+    );
+  }
+
+  const status =
+    document.getElementById(`wordstatus-${idx}`);
+
+  if (status) {
+    status.textContent =
+      complete ? '✅' : '○';
+  }
+
   if (field === 'base') {
-    const hint = document.getElementById(`wordhint-${idx}`);
-    if (hint) hint.style.display = value ? 'none' : (hint.textContent ? 'inline-block' : 'none');
+    const hint =
+      document.getElementById(`wordhint-${idx}`);
+
+    if (hint) {
+      hint.style.display =
+        value
+          ? 'none'
+          : (hint.textContent
+              ? 'inline-block'
+              : 'none');
+    }
   }
 }
 
 function acceptGuess(idx) {
-  const resolved = lemmatizer.resolve(teachWords[idx].value);
-  teachWords[idx].base = resolved.base;
-  const input = document.getElementById(`wordbase-${idx}`);
-  if (input) input.value = resolved.base;
-  updateWordField(idx, 'base', resolved.base);
+  const resolved =
+    lemmatizer.resolve(
+      teachWords[idx].value
+    );
+
+  teachWords[idx].base =
+    resolved.base;
+
+  const input =
+    document.getElementById(
+      `wordbase-${idx}`
+    );
+
+  if (input) {
+    input.value =
+      resolved.base;
+  }
+
+  updateWordField(
+    idx,
+    'base',
+    resolved.base
+  );
 }
 
 function learnSentence() {
-  const taggedCount = teachWords.filter(w => w.type && w.base).length;
-  if (taggedCount === 0) return alert("Set at least one word's Type and Base form");
-  teachWords.forEach(w => { if (w.base) lemmatizer.teach(w.value, w.base, w.grammar); });
-  const tokensForContext = teachWords.map(w => ({
-    value: w.value, type: w.type || null, base: w.base ? w.base.toLowerCase() : lemmatizer.getLemma(w.value)
-  }));
-  tokenizer.learnSentence(tokensForContext);
+  const taggedCount =
+    teachWords.filter(
+      w => w.type && w.base
+    ).length;
+
+  if (taggedCount === 0) {
+    return alert(
+      "Set at least one word's Type and Base form"
+    );
+  }
+
+  teachWords.forEach(w => {
+    if (w.base) {
+      lemmatizer.teach(
+        w.value,
+        w.base,
+        w.grammar
+      );
+    }
+  });
+
+  const tokensForContext =
+    teachWords.map(w => ({
+      value: w.value,
+      type: w.type || null,
+      base:
+        w.base
+          ? w.base.toLowerCase()
+          : lemmatizer.getLemma(w.value)
+    }));
+
+  tokenizer.learnSentence(
+    tokensForContext
+  );
+
   saveAll();
-  document.getElementById('teachSentence').value = '';
+
+  document.getElementById(
+    'teachSentence'
+  ).value = '';
+
   teachWords = [];
+
   renderSentencePreview();
   renderWordCards();
+
   activateTab('sentence');
 }
 
 function clearTeach() {
-  document.getElementById('teachSentence').value = '';
+  document.getElementById(
+    'teachSentence'
+  ).value = '';
+
   teachWords = [];
+
   renderSentencePreview();
   renderWordCards();
 }
 
+
 // ===== TEST TOKENIZE =====
 function tokenizeTest() {
-  const text = document.getElementById('testSentence').value.trim();
+  const text =
+    document.getElementById(
+      'testSentence'
+    ).value.trim();
+
   if (!text) return alert('Enter a sentence');
-  const words = tokenizeText(text);
-  const resolved = words.map(w => isPunctuationToken(w)
-    ? { base: w, source: 'punctuation', confidence: 1 }
-    : lemmatizer.resolve(w));
-  const tokens = words.map((word, idx) => {
-    if (isPunctuationToken(word)) {
-      return { word, base: word, type: 'punctuation', confidence: 1, grammar: null, baseSource: 'punctuation' };
-    }
-    const before = words.slice(Math.max(0, idx - 2), idx).map((w, i) => resolved[Math.max(0, idx - 2) + i].base + '/' + typeGuessFor(resolved[Math.max(0, idx - 2) + i].base));
-    const after = words.slice(idx + 1, Math.min(words.length, idx + 3)).map((w, i) => resolved[idx + 1 + i].base + '/' + typeGuessFor(resolved[idx + 1 + i].base));
-    const base = resolved[idx].base;
-    const classified = tokenizer.classifyWord(base, { before, after });
-    const grammar = lemmatizer.getFormLabel(word);
-    return { word, base, type: classified.type, confidence: classified.confidence, grammar, baseSource: resolved[idx].source };
-  });
+
+  const words =
+    tokenizeText(text);
+
+  /*
+   * First resolve everything using exact memory / regular patterns.
+   * Irregular contextual inference happens only afterward, so it can never
+   * override a known mapping.
+   */
+  const resolved =
+    words.map(w =>
+      isPunctuationToken(w)
+        ? {
+            base: w,
+            source: 'punctuation',
+            confidence: 1
+          }
+        : lemmatizer.resolve(w)
+    );
+
+  const tokens =
+    words.map((word, idx) => {
+      if (isPunctuationToken(word)) {
+        return {
+          word,
+          base: word,
+          type: 'punctuation',
+          confidence: 1,
+          baseConfidence: 1,
+          grammar: null,
+          baseSource: 'punctuation'
+        };
+      }
+
+      let before =
+        words
+          .slice(
+            Math.max(0, idx - 2),
+            idx
+          )
+          .map((w, i) => {
+            const r =
+              resolved[
+                Math.max(0, idx - 2) + i
+              ];
+
+            return (
+              r.base +
+              '/' +
+              typeGuessFor(r.base)
+            );
+          });
+
+      let after =
+        words
+          .slice(
+            idx + 1,
+            Math.min(
+              words.length,
+              idx + 3
+            )
+          )
+          .map((w, i) => {
+            const r =
+              resolved[idx + 1 + i];
+
+            return (
+              r.base +
+              '/' +
+              typeGuessFor(r.base)
+            );
+          });
+
+      let baseResolution =
+        resolved[idx];
+
+      /*
+       * Only unknown words are eligible.
+       * Directly taught forms and normal pattern guesses stay untouched.
+       */
+      if (
+        baseResolution.source === 'unknown'
+      ) {
+        const irregularGuess =
+          tokenizer.inferIrregularLemma(
+            word,
+            { before, after }
+          );
+
+        if (irregularGuess) {
+          baseResolution = {
+            ...baseResolution,
+            ...irregularGuess
+          };
+        }
+      }
+
+      const base =
+        baseResolution.base;
+
+      const classified =
+        tokenizer.classifyWord(
+          base,
+          { before, after }
+        );
+
+      const grammar =
+        lemmatizer.getFormLabel(word);
+
+      return {
+        word,
+        base,
+        type: classified.type,
+        confidence: classified.confidence,
+        baseConfidence: baseResolution.confidence,
+        grammar,
+        baseSource: baseResolution.source
+      };
+    });
+
   renderTokenOutput(tokens);
 }
 
 function typeGuessFor(lemma) {
   if (tokenizer.lemmaContexts.has(lemma)) {
-    const types = Array.from(tokenizer.lemmaContexts.get(lemma).keys());
+    const types =
+      Array.from(
+        tokenizer.lemmaContexts
+          .get(lemma)
+          .keys()
+      );
+
     return types[0] || 'unk';
   }
+
   return 'unk';
 }
 
 function renderTokenOutput(tokens) {
-  const output = document.getElementById('tokenOutput');
-  output.innerHTML = tokens.map(t => `
-    <div class="token">
-      <span class="word">${t.word}</span>
-      <span class="type">type: ${t.type}</span>
-      <span class="base">base: ${t.base}</span>
-      ${t.grammar ? `<span class="gform">form: ${t.grammar}</span>` : ''}
-      <span class="conf">type conf ${(t.confidence * 100).toFixed(0)}%</span>
-      <span class="src">${t.baseSource}</span>
-    </div>
-  `).join('');
+  const output =
+    document.getElementById(
+      'tokenOutput'
+    );
+
+  output.innerHTML =
+    tokens.map(t => `
+      <div class="token">
+        <span class="word">${t.word}</span>
+        <span class="type">type: ${t.type}</span>
+        <span class="base">base: ${t.base}</span>
+        ${t.grammar ? `<span class="gform">form: ${t.grammar}</span>` : ''}
+        <span class="conf">
+          base conf ${(t.baseConfidence * 100).toFixed(0)}%
+          · type conf ${(t.confidence * 100).toFixed(0)}%
+        </span>
+        <span class="src">${t.baseSource}</span>
+      </div>
+    `).join('');
 }
 
 function clearTest() {
-  document.getElementById('testSentence').value = '';
-  document.getElementById('tokenOutput').innerHTML = '<div class="empty-state" style="width:100%;">Tokenize above</div>';
+  document.getElementById(
+    'testSentence'
+  ).value = '';
+
+  document.getElementById(
+    'tokenOutput'
+  ).innerHTML =
+    '<div class="empty-state" style="width:100%;">Tokenize above</div>';
 }
+
 
 // ===== SEARCH =====
 function performSearch() {
-  const query = document.getElementById('searchInput').value.trim().toLowerCase();
-  if (!query) { document.getElementById('searchResults').innerHTML = '<div class="empty-state">Search above</div>'; return; }
+  const query =
+    document.getElementById(
+      'searchInput'
+    ).value.trim().toLowerCase();
+
+  if (!query) {
+    document.getElementById(
+      'searchResults'
+    ).innerHTML =
+      '<div class="empty-state">Search above</div>';
+
+    return;
+  }
+
   const results = [];
-  lemmatizer.getAllLemmas().forEach(({ lemma, forms }) => {
-    if (lemma.includes(query) || forms.some(f => f.surface.includes(query) || (f.form && f.form.toLowerCase().includes(query)))) {
-      results.push({ lemma, forms });
-    }
-  });
-  const container = document.getElementById('searchResults');
-  if (results.length === 0) { container.innerHTML = '<div class="empty-state">No matches</div>'; return; }
-  container.innerHTML = results.map(({ lemma, forms }) => `
-    <div class="search-result" onclick="showLemmaDetails('${lemma}')">
-      <div class="result-lemma">${lemma}</div>
-      <div class="result-forms">${forms.map(f => f.surface + (f.form ? ' (' + f.form + ')' : '')).join(', ')}</div>
-      ${tokenizer.lemmaContexts.has(lemma) ? `<div class="result-contexts">${tokenizer.lemmaContexts.get(lemma).size} types learned</div>` : ''}
-    </div>
-  `).join('');
+
+  lemmatizer.getAllLemmas()
+    .forEach(({ lemma, forms }) => {
+      if (
+        lemma.includes(query) ||
+        forms.some(
+          f =>
+            f.surface.includes(query) ||
+            (
+              f.form &&
+              f.form
+                .toLowerCase()
+                .includes(query)
+            )
+        )
+      ) {
+        results.push({
+          lemma,
+          forms
+        });
+      }
+    });
+
+  const container =
+    document.getElementById(
+      'searchResults'
+    );
+
+  if (results.length === 0) {
+    container.innerHTML =
+      '<div class="empty-state">No matches</div>';
+
+    return;
+  }
+
+  container.innerHTML =
+    results.map(({ lemma, forms }) => `
+      <div class="search-result" onclick="showLemmaDetails('${lemma}')">
+        <div class="result-lemma">${lemma}</div>
+
+        <div class="result-forms">
+          ${forms.map(
+            f =>
+              f.surface +
+              (f.form
+                ? ' (' + f.form + ')'
+                : '')
+          ).join(', ')}
+        </div>
+
+        ${
+          tokenizer.lemmaContexts.has(lemma)
+            ? `<div class="result-contexts">
+                 ${tokenizer.lemmaContexts.get(lemma).size}
+                 types learned
+               </div>`
+            : ''
+        }
+      </div>
+    `).join('');
 }
 
 function showLemmaDetails(lemma) {
-  const forms = lemmatizer.getForms(lemma);
-  const contexts = tokenizer.lemmaContexts.get(lemma);
+  const forms =
+    lemmatizer.getForms(lemma);
+
+  const contexts =
+    tokenizer.lemmaContexts.get(lemma);
+
+  const irregular =
+    lemmatizer.getWeakIrregularForms(
+      lemma
+    );
+
   let html = `
     <div class="lemma-family">
-      <div class="lemma-name">${lemma}</div>
+      <div class="lemma-name">
+        ${lemma}
+      </div>
+
       <div class="form-list">
-        ${forms.map(f => `<span class="form-badge">${f.surface}${f.form ? ' <em>(' + f.form + ')</em>' : ''}</span>`).join('')}
+        ${forms.map(
+          f => `
+            <span class="form-badge">
+              ${f.surface}
+              ${
+                f.form
+                  ? ` <em>(${f.form})</em>`
+                  : ''
+              }
+            </span>
+          `
+        ).join('')}
       </div>
   `;
+
+  if (irregular.length >= 2) {
+    html += `
+      <div style="margin-top:1rem;color:#888;font-size:0.82rem;">
+        Weak irregular family:
+        <span style="color:#d4a574;">
+          ${irregular.join(', ')}
+        </span>
+        <div style="margin-top:0.25rem;color:#666;">
+          Can contribute only weak contextual evidence for unseen forms.
+        </div>
+      </div>
+    `;
+  }
+
   if (contexts && contexts.size > 0) {
-    html += `<div style="margin-top: 1rem;">`;
+    html += `
+      <div style="margin-top:1rem;">
+    `;
+
     contexts.forEach((ctxList, type) => {
-      html += `<div style="font-size: 0.85rem; margin: 0.3rem 0; color: #b3d9ff;"><span style="color: #4a9eff; font-weight: 700;">${type}</span> — ${ctxList.length} example${ctxList.length !== 1 ? 's' : ''}</div>`;
+      html += `
+        <div style="font-size:0.85rem;margin:0.3rem 0;color:#b3d9ff;">
+          <span style="color:#4a9eff;font-weight:700;">
+            ${type}
+          </span>
+          — ${ctxList.length}
+          example${ctxList.length !== 1 ? 's' : ''}
+        </div>
+      `;
     });
+
     html += `</div>`;
   } else {
-    html += `<div style="margin-top: 1rem; color: #666; font-size: 0.85rem;">No contexts learned</div>`;
+    html += `
+      <div style="margin-top:1rem;color:#666;font-size:0.85rem;">
+        No contexts learned
+      </div>
+    `;
   }
-  html += `</div>`;
-  document.getElementById('lemmaDetails').innerHTML = html;
+
+  html += `
+    </div>
+  `;
+
+  document.getElementById(
+    'lemmaDetails'
+  ).innerHTML = html;
 }
 
+
+// ===== STATS =====
 function updateStats() {
-  document.getElementById('lemmaCount').textContent = lemmatizer.lemmas.size;
-  const stats = tokenizer.getStats();
-  document.getElementById('contextCount').textContent = stats.contexts;
-  document.getElementById('patternCount').textContent = lemmatizer.patterns.size();
+  document.getElementById(
+    'lemmaCount'
+  ).textContent =
+    lemmatizer.lemmas.size;
+
+  const stats =
+    tokenizer.getStats();
+
+  document.getElementById(
+    'contextCount'
+  ).textContent =
+    stats.contexts;
+
+  document.getElementById(
+    'patternCount'
+  ).textContent =
+    lemmatizer.patterns.size();
 }
 
 initDB();
