@@ -307,6 +307,12 @@ button:disabled { background: #333; color: #666; cursor: not-allowed; }
 <header>
   <h1>Pistol</h1>
   <p>Sentence-based lemma &amp; context learning</p>
+  <div class="button-row" style="margin-top: 0.6rem;">
+    <button class="btn-secondary btn-small" onclick="exportData()">Export JSON</button>
+    <button class="btn-secondary btn-small" onclick="document.getElementById('importFileInput').click()">Import JSON</button>
+    <input type="file" id="importFileInput" accept="application/json" style="display:none" onchange="importData(this.files[0])">
+    <span id="ioStatus" style="font-size:0.75rem;color:#4a9eff;align-self:center;"></span>
+  </div>
 </header>
 
 <div class="tabs">
@@ -686,6 +692,110 @@ async function loadAll() {
       resolve();
     };
   });
+}
+
+// ===== JSON I/O =====
+function serializeState() {
+  return {
+    format: 'pistol-lemma-export',
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    lemmatizer: {
+      lemmas: Array.from(lemmatizer.lemmas.entries()).map(([k, v]) => [k, Array.from(v)]),
+      forms: Array.from(lemmatizer.forms.entries()),
+      formLabels: Array.from(lemmatizer.formLabels.entries()),
+      patterns: lemmatizer.patterns.toJSON()
+    },
+    tokenizer: {
+      lemmaContexts: Array.from(tokenizer.lemmaContexts.entries()).map(([lemma, typeMap]) => ({
+        lemma, types: Array.from(typeMap.entries()).map(([type, contexts]) => ({ type, contexts }))
+      })),
+      sentenceCount: tokenizer.sentenceCount
+    }
+  };
+}
+
+function exportData() {
+  const data = serializeState();
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+  a.href = url;
+  a.download = `pistol-lemma-export-${stamp}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  setIoStatus('Exported.');
+}
+
+function importData(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async () => {
+    let data;
+    try {
+      data = JSON.parse(reader.result);
+    } catch (err) {
+      alert('That file is not valid JSON.');
+      return;
+    }
+    if (!data || !data.lemmatizer || !data.tokenizer) {
+      alert('This JSON file doesn\'t look like a Pistol export.');
+      return;
+    }
+    const mode = confirm(
+      'Click OK to MERGE this file into your current data.\nClick Cancel to REPLACE all current data with this file.'
+    ) ? 'merge' : 'replace';
+
+    if (mode === 'replace') {
+      lemmatizer = new Lemmatizer();
+      tokenizer = new ContextTokenizer(lemmatizer);
+    }
+
+    // Lemmatizer
+    (data.lemmatizer.lemmas || []).forEach(([base, forms]) => {
+      if (!lemmatizer.lemmas.has(base)) lemmatizer.lemmas.set(base, new Set());
+      forms.forEach(f => lemmatizer.lemmas.get(base).add(f));
+    });
+    (data.lemmatizer.forms || []).forEach(([surface, base]) => lemmatizer.forms.set(surface, base));
+    (data.lemmatizer.formLabels || []).forEach(([surface, label]) => lemmatizer.formLabels.set(surface, label));
+    (data.lemmatizer.patterns || []).forEach(([fromSuffix, toEntries]) => {
+      if (!lemmatizer.patterns.rules.has(fromSuffix)) lemmatizer.patterns.rules.set(fromSuffix, new Map());
+      const m = lemmatizer.patterns.rules.get(fromSuffix);
+      toEntries.forEach(([toSuffix, count]) => {
+        m.set(toSuffix, (m.get(toSuffix) || 0) + count);
+      });
+    });
+
+    // Tokenizer
+    (data.tokenizer.lemmaContexts || []).forEach(({ lemma, types }) => {
+      if (!tokenizer.lemmaContexts.has(lemma)) tokenizer.lemmaContexts.set(lemma, new Map());
+      const typeMap = tokenizer.lemmaContexts.get(lemma);
+      types.forEach(({ type, contexts }) => {
+        if (!typeMap.has(type)) typeMap.set(type, []);
+        typeMap.set(type, typeMap.get(type).concat(contexts));
+      });
+    });
+    tokenizer.sentenceCount = mode === 'replace'
+      ? (data.tokenizer.sentenceCount || 0)
+      : tokenizer.sentenceCount + (data.tokenizer.sentenceCount || 0);
+
+    await saveAll();
+    updateStats();
+    document.getElementById('searchResults').innerHTML = '<div class="empty-state">Search above</div>';
+    document.getElementById('lemmaDetails').innerHTML = '<div class="empty-state">Select a lemma</div>';
+    setIoStatus(mode === 'replace' ? 'Replaced with imported data.' : 'Merged imported data.');
+  };
+  reader.readAsText(file);
+  document.getElementById('importFileInput').value = '';
+}
+
+function setIoStatus(msg) {
+  const el = document.getElementById('ioStatus');
+  el.textContent = msg;
+  setTimeout(() => { if (el.textContent === msg) el.textContent = ''; }, 4000);
 }
 
 // ===== TEACH TAB STATE =====
